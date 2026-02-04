@@ -2,95 +2,140 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Restaurant Beverage Inventory System - Design System
+   Theme: Dark Green (primary) + Golden (accent)
+   All colors in HSL format
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core backgrounds */
+    --background: 120 15% 98%;
+    --foreground: 150 30% 10%;
 
+    /* Cards and surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 150 30% 10%;
 
+    /* Popovers and dropdowns */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 150 30% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Dark Green */
+    --primary: 150 40% 22%;
+    --primary-foreground: 45 100% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Muted green */
+    --secondary: 150 20% 94%;
+    --secondary-foreground: 150 40% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted elements */
+    --muted: 150 15% 92%;
+    --muted-foreground: 150 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Golden */
+    --accent: 45 90% 50%;
+    --accent-foreground: 150 40% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive: Red for negative values */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Warning: Orange for low stock */
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 10%;
+
+    /* Success: Green for positive */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 150 20% 88%;
+    --input: 150 20% 88%;
+    --ring: 150 40% 22%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Sidebar */
+    --sidebar-background: 150 40% 22%;
+    --sidebar-foreground: 45 100% 98%;
+    --sidebar-primary: 45 90% 50%;
+    --sidebar-primary-foreground: 150 40% 15%;
+    --sidebar-accent: 150 35% 28%;
+    --sidebar-accent-foreground: 45 100% 98%;
+    --sidebar-border: 150 35% 30%;
+    --sidebar-ring: 45 90% 50%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Chart colors */
+    --chart-1: 150 40% 30%;
+    --chart-2: 45 90% 50%;
+    --chart-3: 150 35% 45%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 150 25% 60%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark mode backgrounds */
+    --background: 150 25% 8%;
+    --foreground: 45 30% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Cards in dark mode */
+    --card: 150 25% 12%;
+    --card-foreground: 45 30% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    /* Popovers */
+    --popover: 150 25% 12%;
+    --popover-foreground: 45 30% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary: Lighter green for dark mode */
+    --primary: 150 45% 45%;
+    --primary-foreground: 150 30% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary */
+    --secondary: 150 25% 18%;
+    --secondary-foreground: 45 30% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted */
+    --muted: 150 20% 16%;
+    --muted-foreground: 150 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent: Golden stays bright */
+    --accent: 45 90% 55%;
+    --accent-foreground: 150 40% 10%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Warning */
+    --warning: 38 92% 55%;
+    --warning-foreground: 38 92% 10%;
+
+    /* Success */
+    --success: 142 76% 42%;
+    --success-foreground: 0 0% 100%;
+
+    /* Borders */
+    --border: 150 20% 22%;
+    --input: 150 20% 22%;
+    --ring: 45 90% 50%;
+
+    /* Sidebar dark */
+    --sidebar-background: 150 30% 10%;
+    --sidebar-foreground: 45 100% 98%;
+    --sidebar-primary: 45 90% 55%;
+    --sidebar-primary-foreground: 150 40% 10%;
+    --sidebar-accent: 150 25% 18%;
+    --sidebar-accent-foreground: 45 100% 98%;
+    --sidebar-border: 150 25% 20%;
+    --sidebar-ring: 45 90% 55%;
+
+    /* Chart colors dark */
+    --chart-1: 150 45% 50%;
+    --chart-2: 45 90% 55%;
+    --chart-3: 150 40% 60%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 150 30% 70%;
   }
 }
 
@@ -100,6 +145,141 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* KPI Card styles */
+  .kpi-card {
+    @apply bg-card rounded-xl border border-border p-6 shadow-sm transition-all duration-200 hover:shadow-md;
+  }
+
+  .kpi-card-accent {
+    @apply bg-gradient-to-br from-accent/10 to-accent/5 border-accent/30;
+  }
+
+  .kpi-value {
+    @apply text-3xl font-bold text-foreground;
+  }
+
+  .kpi-label {
+    @apply text-sm font-medium text-muted-foreground mt-1;
+  }
+
+  /* Negative stock styling */
+  .stock-negative {
+    @apply text-destructive font-bold;
+  }
+
+  .stock-negative-row {
+    @apply bg-destructive/5;
+  }
+
+  .badge-negative {
+    @apply bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-low {
+    @apply bg-warning text-warning-foreground text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-ok {
+    @apply bg-success text-success-foreground text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  /* Data table enhancements */
+  .data-table {
+    @apply w-full border-collapse;
+  }
+
+  .data-table th {
+    @apply text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4 border-b border-border bg-muted/50;
+  }
+
+  .data-table td {
+    @apply py-3 px-4 border-b border-border;
+  }
+
+  .data-table tr:hover {
+    @apply bg-muted/30;
+  }
+
+  /* Currency display */
+  .currency {
+    @apply font-mono tabular-nums;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors;
+  }
+
+  .nav-item-active {
+    @apply bg-sidebar-accent text-sidebar-primary font-medium;
+  }
+
+  /* Quick action buttons */
+  .quick-action-btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors;
+  }
+
+  /* Modal/drawer header */
+  .modal-header {
+    @apply text-xl font-semibold text-foreground mb-6;
+  }
+
+  /* Form field groups */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  /* POS-style line item */
+  .pos-line-item {
+    @apply flex items-center gap-4 p-3 bg-muted/50 rounded-lg border border-border;
+  }
+}
+
+@layer utilities {
+  /* Animation for loading states */
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Gradient text for accent highlights */
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-accent to-warning bg-clip-text text-transparent;
   }
 }
