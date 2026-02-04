@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Product, StockEntryFormData, getStockStatus } from '@/types/inventory';
-import { useToast } from '@/hooks/use-toast';
+import { Product, getStockStatus } from '@/types/inventory';
+import { useStockEntries } from '@/hooks/useStockEntries';
 import { cn } from '@/lib/utils';
 
 interface AddStockModalProps {
@@ -25,7 +25,6 @@ interface AddStockModalProps {
   onOpenChange: (open: boolean) => void;
   products: Product[];
   selectedProduct?: Product | null;
-  onSuccess?: (entry: StockEntryFormData) => void;
 }
 
 export function AddStockModal({ 
@@ -33,48 +32,42 @@ export function AddStockModal({
   onOpenChange, 
   products, 
   selectedProduct,
-  onSuccess 
 }: AddStockModalProps) {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<StockEntryFormData>({
-    product_id: '',
-    quantity: 0,
-    buying_price: undefined,
-    supplier: '',
-    notes: '',
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof StockEntryFormData, string>>>({});
+  const { addStockEntry } = useStockEntries();
+  const [productId, setProductId] = useState('');
+  const [quantity, setQuantity] = useState(0);
+  const [buyingPrice, setBuyingPrice] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (selectedProduct) {
-      setFormData({
-        ...formData,
-        product_id: selectedProduct.id,
-        buying_price: selectedProduct.buying_price,
-      });
-    } else {
-      setFormData({
-        product_id: '',
-        quantity: 0,
-        buying_price: undefined,
-        supplier: '',
-        notes: '',
-      });
+      setProductId(selectedProduct.id);
+      setBuyingPrice(selectedProduct.buying_price);
     }
-  }, [selectedProduct, open]);
+  }, [selectedProduct]);
 
-  const currentProduct = products.find(p => p.id === formData.product_id);
+  useEffect(() => {
+    if (!open) {
+      setProductId('');
+      setQuantity(0);
+      setBuyingPrice(0);
+      setNotes('');
+      setErrors({});
+    }
+  }, [open]);
+
+  const currentProduct = products.find(p => p.id === productId);
   const currentStock = currentProduct?.current_stock ?? 0;
   const status = currentProduct ? getStockStatus(currentStock, currentProduct.reorder_level) : 'OK';
 
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof StockEntryFormData, string>> = {};
+    const newErrors: Record<string, string> = {};
     
-    if (!formData.product_id) {
-      newErrors.product_id = 'Please select a product';
+    if (!productId) {
+      newErrors.productId = 'Please select a product';
     }
-    if (formData.quantity <= 0) {
+    if (quantity <= 0) {
       newErrors.quantity = 'Quantity must be greater than 0';
     }
 
@@ -87,20 +80,25 @@ export function AddStockModal({
     
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const productName = currentProduct?.name || 'Product';
-    toast({
-      title: "Stock Added",
-      description: `Added ${formData.quantity} units to ${productName}.`,
+    addStockEntry.mutate({
+      product_id: productId,
+      quantity: quantity,
+      buying_price: buyingPrice > 0 ? buyingPrice : undefined,
+      type: 'inbound',
+      notes: notes || undefined,
+    }, {
+      onSuccess: () => {
+        onOpenChange(false);
+      },
     });
-    
-    onSuccess?.(formData);
-    onOpenChange(false);
-    setIsSubmitting(false);
+  };
+
+  const handleProductChange = (value: string) => {
+    setProductId(value);
+    const product = products.find(p => p.id === value);
+    if (product) {
+      setBuyingPrice(product.buying_price);
+    }
   };
 
   return (
@@ -115,29 +113,19 @@ export function AddStockModal({
             <Label htmlFor="product" className="form-label">
               Product <span className="text-destructive">*</span>
             </Label>
-            <Select 
-              value={formData.product_id} 
-              onValueChange={(value) => {
-                const product = products.find(p => p.id === value);
-                setFormData({ 
-                  ...formData, 
-                  product_id: value,
-                  buying_price: product?.buying_price,
-                });
-              }}
-            >
-              <SelectTrigger className={errors.product_id ? 'border-destructive' : ''}>
+            <Select value={productId} onValueChange={handleProductChange}>
+              <SelectTrigger className={errors.productId ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Select a product" />
               </SelectTrigger>
               <SelectContent>
                 {products.map((product) => (
                   <SelectItem key={product.id} value={product.id}>
-                    {product.name} {product.sku && `(${product.sku})`}
+                    {product.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.product_id && <p className="text-sm text-destructive">{errors.product_id}</p>}
+            {errors.productId && <p className="text-sm text-destructive">{errors.productId}</p>}
           </div>
 
           {currentProduct && (
@@ -175,8 +163,8 @@ export function AddStockModal({
                 id="quantity"
                 type="number"
                 min="1"
-                value={formData.quantity || ''}
-                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                value={quantity || ''}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
                 className={errors.quantity ? 'border-destructive' : ''}
               />
               {errors.quantity && <p className="text-sm text-destructive">{errors.quantity}</p>}
@@ -188,30 +176,20 @@ export function AddStockModal({
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.buying_price ?? ''}
-                onChange={(e) => setFormData({ ...formData, buying_price: parseFloat(e.target.value) || undefined })}
+                value={buyingPrice || ''}
+                onChange={(e) => setBuyingPrice(parseFloat(e.target.value) || 0)}
                 placeholder="Use product default"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <Label htmlFor="supplier" className="form-label">Supplier</Label>
-            <Input
-              id="supplier"
-              value={formData.supplier}
-              onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-              placeholder="e.g., BGI Ethiopia"
-            />
-          </div>
-
-          <div className="form-group">
             <Label htmlFor="notes" className="form-label">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional notes..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g., Weekly restock from supplier"
               rows={2}
             />
           </div>
@@ -220,8 +198,8 @@ export function AddStockModal({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Stock'}
+            <Button type="submit" disabled={addStockEntry.isPending}>
+              {addStockEntry.isPending ? 'Adding...' : 'Add Stock'}
             </Button>
           </div>
         </form>

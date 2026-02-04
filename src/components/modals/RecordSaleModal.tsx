@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import { Product, PaymentType, SaleLineItem, formatETB, getStockStatus } from '@/types/inventory';
-import { useToast } from '@/hooks/use-toast';
+import { useSales } from '@/hooks/useSales';
 import { cn } from '@/lib/utils';
 
 interface RecordSaleModalProps {
@@ -31,8 +31,7 @@ interface RecordSaleModalProps {
 const paymentTypes: PaymentType[] = ['Cash', 'Card', 'Other'];
 
 export function RecordSaleModal({ open, onOpenChange, products, onSuccess }: RecordSaleModalProps) {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createSale } = useSales('today');
   const [lineItems, setLineItems] = useState<SaleLineItem[]>([
     { id: '1', product_id: '', product_name: '', quantity: 1, selling_price: 0, current_stock: 0 }
   ]);
@@ -80,59 +79,31 @@ export function RecordSaleModal({ open, onOpenChange, products, onSuccess }: Rec
   const totalUnits = lineItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const totalValue = lineItems.reduce((sum, item) => sum + (item.quantity * item.selling_price), 0);
 
-  const validate = (): boolean => {
-    const invalidItems = lineItems.filter(item => !item.product_id || item.quantity <= 0);
-    if (invalidItems.length > 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please ensure all items have a product selected and quantity > 0",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validate()) return;
-
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Check for negative stock warnings
-    const negativeWarnings = lineItems.filter(item => {
-      const newStock = item.current_stock - item.quantity;
-      return newStock < 0;
-    });
-
-    if (negativeWarnings.length > 0) {
-      negativeWarnings.forEach(item => {
-        const newStock = item.current_stock - item.quantity;
-        toast({
-          title: "Negative Stock Warning",
-          description: `${item.product_name} now NEGATIVE: ${newStock}`,
-          variant: "destructive",
-        });
-      });
+    const invalidItems = lineItems.filter(item => !item.product_id || item.quantity <= 0);
+    if (invalidItems.length > 0) {
+      return;
     }
 
-    toast({
-      title: "Sale Recorded",
-      description: `Sale of ${totalUnits} units for ${formatETB(totalValue)} recorded successfully.`,
+    createSale.mutate({
+      items: lineItems.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        selling_price: item.selling_price,
+      })),
+      payment_type: paymentType,
+      notes: notes || undefined,
+    }, {
+      onSuccess: () => {
+        onSuccess?.();
+        onOpenChange(false);
+        setLineItems([{ id: '1', product_id: '', product_name: '', quantity: 1, selling_price: 0, current_stock: 0 }]);
+        setPaymentType('Cash');
+        setNotes('');
+      },
     });
-    
-    onSuccess?.();
-    onOpenChange(false);
-    
-    // Reset form
-    setLineItems([{ id: '1', product_id: '', product_name: '', quantity: 1, selling_price: 0, current_stock: 0 }]);
-    setPaymentType('Cash');
-    setNotes('');
-    setIsSubmitting(false);
   };
 
   const handleClear = () => {
@@ -152,7 +123,7 @@ export function RecordSaleModal({ open, onOpenChange, products, onSuccess }: Rec
           {/* Line Items */}
           <div className="space-y-3">
             <Label className="form-label">Sale Items</Label>
-            {lineItems.map((item, index) => {
+            {lineItems.map((item) => {
               const product = products.find(p => p.id === item.product_id);
               const status = product ? getStockStatus(item.current_stock, product.reorder_level) : 'OK';
               
@@ -276,8 +247,8 @@ export function RecordSaleModal({ open, onOpenChange, products, onSuccess }: Rec
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Recording...' : 'Record Sale'}
+              <Button type="submit" disabled={createSale.isPending}>
+                {createSale.isPending ? 'Recording...' : 'Record Sale'}
               </Button>
             </div>
           </div>

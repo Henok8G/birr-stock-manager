@@ -16,14 +16,13 @@ export interface User {
 export interface Product {
   id: string;
   name: string;
-  sku: string | null;
   category: ProductCategory;
-  unit_size: string | null;
   buying_price: number;
   selling_price: number;
   opening_stock: number;
   reorder_level: number | null;
   created_at: string;
+  updated_at?: string;
   // Computed fields
   received?: number;
   sold?: number;
@@ -101,21 +100,19 @@ export interface TopSellerData {
 // Form types
 export interface ProductFormData {
   name: string;
-  sku: string;
   category: ProductCategory;
-  unit_size: string;
   buying_price: number;
   selling_price: number;
   opening_stock: number;
   reorder_level: number;
-  notes?: string;
 }
 
 export interface StockEntryFormData {
   product_id: string;
   quantity: number;
   buying_price?: number;
-  supplier?: string;
+  type: StockEntryType;
+  reason?: string;
   notes?: string;
 }
 

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Download, Plus, ArrowUpDown, Package } from 'lucide-react';
 import { Product, getStockStatus, formatETB } from '@/types/inventory';
-import { mockStockEntries, mockSales } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -24,29 +23,6 @@ export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDeta
   const currentStock = product.current_stock ?? 0;
   const status = getStockStatus(currentStock, product.reorder_level);
 
-  // Get related stock entries and sales
-  const relatedEntries = mockStockEntries.filter(e => e.product_id === product.id);
-  const relatedSaleItems = mockSales
-    .flatMap(sale => (sale.items || []).map(item => ({ ...item, sale_date: sale.created_at })))
-    .filter(item => item.product_id === product.id);
-
-  // Combine and sort timeline
-  const timeline = [
-    ...relatedEntries.map(e => ({
-      type: e.type === 'inbound' ? 'Received' : 'Adjustment',
-      date: e.created_at,
-      quantity: e.quantity,
-      details: e.notes || e.reason || '',
-    })),
-    ...relatedSaleItems.map(item => ({
-      type: 'Sold',
-      date: item.sale_date,
-      quantity: -item.quantity,
-      details: `Sale ${item.sale_id}`,
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 10);
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg overflow-y-auto">
@@ -57,7 +33,6 @@ export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDeta
             </div>
             <div>
               <p className="text-xl">{product.name}</p>
-              {product.sku && <p className="text-sm text-muted-foreground">{product.sku}</p>}
             </div>
           </SheetTitle>
         </SheetHeader>
@@ -68,10 +43,6 @@ export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDeta
             <div>
               <p className="text-muted-foreground">Category</p>
               <p className="font-medium">{product.category}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Unit Size</p>
-              <p className="font-medium">{product.unit_size || '—'}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Buying Price</p>
@@ -150,7 +121,7 @@ export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDeta
 
           <Separator />
 
-          {/* Movement Timeline */}
+          {/* Movement Timeline placeholder */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Recent Movement</h3>
@@ -160,43 +131,9 @@ export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDeta
               </Button>
             </div>
             
-            {timeline.length > 0 ? (
-              <div className="space-y-2">
-                {timeline.map((item, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 text-sm"
-                  >
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      item.type === 'Received' && "bg-success",
-                      item.type === 'Sold' && "bg-destructive",
-                      item.type === 'Adjustment' && "bg-warning"
-                    )} />
-                    <div className="flex-1">
-                      <p className="font-medium">{item.type}</p>
-                      <p className="text-xs text-muted-foreground">{item.details}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={cn(
-                        "font-semibold",
-                        item.quantity > 0 && "text-success",
-                        item.quantity < 0 && "text-destructive"
-                      )}>
-                        {item.quantity > 0 ? '+' : ''}{item.quantity}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(item.date), 'MMM d')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                No movement history yet
-              </div>
-            )}
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              Movement history will be loaded from database
+            </div>
           </div>
 
           {/* Actions */}
