@@ -4,13 +4,13 @@ import {
   Plus, 
   Filter, 
   Download,
-  Edit,
   Trash2,
   Package,
   ArrowUpDown,
   ChevronDown,
   Boxes,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,16 +43,14 @@ import { AddProductModal } from '@/components/modals/AddProductModal';
 import { AddStockModal } from '@/components/modals/AddStockModal';
 import { AdjustStockModal } from '@/components/modals/AdjustStockModal';
 import { ProductDetailDrawer } from '@/components/inventory/ProductDetailDrawer';
-import { mockProducts } from '@/data/mockData';
-import { Product, ProductCategory, getStockStatus, formatETB } from '@/types/inventory';
-import { useToast } from '@/hooks/use-toast';
+import { useProducts } from '@/hooks/useProducts';
+import { Product, getStockStatus, formatETB, ProductCategory } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 
 const categories: ProductCategory[] = ['Beer', 'Soda', 'Water', 'Alcohol', 'Juice', 'Other'];
 
 export default function Inventory() {
-  const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const { products, isLoading, deleteProduct } = useProducts();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -65,14 +63,12 @@ export default function Inventory() {
   const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // Filter and sort products
   const filteredProducts = products
     .filter(product => {
-      const matchesSearch = 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
       const matchesLowStock = !lowStockOnly || 
         (product.current_stock ?? 0) < 0 || 
@@ -117,27 +113,24 @@ export default function Inventory() {
   };
 
   const handleDeleteProduct = () => {
-    if (deleteProduct) {
-      setProducts(products.filter(p => p.id !== deleteProduct.id));
-      toast({
-        title: "Product Deleted",
-        description: `${deleteProduct.name} has been removed from inventory.`,
-      });
-      setDeleteProduct(null);
+    if (productToDelete) {
+      deleteProduct.mutate(productToDelete.id);
+      setProductToDelete(null);
     }
-  };
-
-  const handleExport = () => {
-    toast({
-      title: "Export Started",
-      description: "Generating inventory report PDF...",
-    });
   };
 
   // Summary stats
   const totalProducts = filteredProducts.length;
   const totalUnits = filteredProducts.reduce((sum, p) => sum + (p.current_stock ?? 0), 0);
   const negativeCount = filteredProducts.filter(p => (p.current_stock ?? 0) < 0).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -152,7 +145,7 @@ export default function Inventory() {
             <Plus className="h-4 w-4" />
             Add Product
           </Button>
-          <Button variant="outline" onClick={handleExport} className="gap-2">
+          <Button variant="outline" className="gap-2">
             <Download className="h-4 w-4" />
             Export
           </Button>
@@ -165,7 +158,7 @@ export default function Inventory() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or SKU..."
+              placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -225,14 +218,12 @@ export default function Inventory() {
                     <ArrowUpDown className="h-3 w-3" />
                   </span>
                 </th>
-                <th>SKU</th>
                 <th className="cursor-pointer" onClick={() => handleSort('category')}>
                   <span className="flex items-center gap-1">
                     Category
                     <ArrowUpDown className="h-3 w-3" />
                   </span>
                 </th>
-                <th>Unit Size</th>
                 <th className="text-right">Buying (ETB)</th>
                 <th className="text-right">Selling (ETB)</th>
                 <th className="text-right">Opening</th>
@@ -267,9 +258,7 @@ export default function Inventory() {
                         {product.name}
                       </button>
                     </td>
-                    <td className="text-muted-foreground">{product.sku || '—'}</td>
                     <td>{product.category}</td>
-                    <td className="text-muted-foreground">{product.unit_size || '—'}</td>
                     <td className="text-right currency">{formatETB(product.buying_price)}</td>
                     <td className="text-right currency">{formatETB(product.selling_price)}</td>
                     <td className="text-right">{product.opening_stock}</td>
@@ -323,7 +312,7 @@ export default function Inventory() {
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => setDeleteProduct(product)}
+                            onClick={() => setProductToDelete(product)}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -372,12 +361,12 @@ export default function Inventory() {
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
+      <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteProduct?.name}</strong>? 
+              Are you sure you want to delete <strong>{productToDelete?.name}</strong>? 
               This action cannot be undone. Any sales history associated with this product will be preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>

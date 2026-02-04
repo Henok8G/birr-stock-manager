@@ -8,7 +8,8 @@ import {
   ShoppingCart,
   Plus,
   Trash2,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,20 +38,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { mockProducts, mockSales } from '@/data/mockData';
-import { Sale, Product, PaymentType, SaleLineItem, formatETB, getStockStatus } from '@/types/inventory';
+import { useProducts } from '@/hooks/useProducts';
+import { useSales, DateFilterType, getDateFilterLabel, Sale } from '@/hooks/useSales';
+import { PaymentType, formatETB, getStockStatus } from '@/types/inventory';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const paymentTypes: PaymentType[] = ['Cash', 'Card', 'Other'];
 
+interface SaleLineItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  selling_price: number;
+  current_stock: number;
+}
+
 export default function Sales() {
   const { toast } = useToast();
-  const [products] = useState<Product[]>(mockProducts);
-  const [sales, setSales] = useState<Sale[]>(mockSales);
+  const { products, isLoading: productsLoading } = useProducts();
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
+  const { sales, isLoading: salesLoading, createSale, reverseSale } = useSales(dateFilter);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState<string>('today');
 
   // Sale entry form
   const [lineItems, setLineItems] = useState<SaleLineItem[]>([
@@ -58,13 +69,12 @@ export default function Sales() {
   ]);
   const [paymentType, setPaymentType] = useState<PaymentType>('Cash');
   const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // View sale modal
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
 
   // Reversal dialog
-  const [reverseSale, setReverseSale] = useState<Sale | null>(null);
+  const [reverseSaleData, setReverseSaleData] = useState<Sale | null>(null);
   const [reverseConfirmText, setReverseConfirmText] = useState('');
 
   // Line item management
@@ -122,55 +132,39 @@ export default function Sales() {
       return;
     }
 
-    setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     // Check for negative stock warnings
     const negativeWarnings = lineItems.filter(item => {
       const newStock = item.current_stock - item.quantity;
       return newStock < 0;
     });
 
-    // Create new sale
-    const newSale: Sale = {
-      id: `S${(sales.length + 1).toString().padStart(3, '0')}`,
-      total_units: totalUnits,
-      total_value: totalValue,
-      payment_type: paymentType,
-      notes: notes || null,
-      created_at: new Date().toISOString(),
-      items: lineItems.map((item, idx) => ({
-        id: `SI${Date.now()}-${idx}`,
-        sale_id: `S${(sales.length + 1).toString().padStart(3, '0')}`,
+    createSale.mutate({
+      items: lineItems.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity,
         selling_price: item.selling_price,
       })),
-    };
-
-    setSales([newSale, ...sales]);
-
-    if (negativeWarnings.length > 0) {
-      negativeWarnings.forEach(item => {
-        const newStock = item.current_stock - item.quantity;
-        toast({
-          title: "Negative Stock Warning",
-          description: `${item.product_name} now NEGATIVE: ${newStock}`,
-          variant: "destructive",
-        });
-      });
-    }
-
-    toast({
-      title: "Sale Recorded",
-      description: `Sale of ${totalUnits} units for ${formatETB(totalValue)} recorded successfully.`,
+      payment_type: paymentType,
+      notes: notes || undefined,
+    }, {
+      onSuccess: () => {
+        if (negativeWarnings.length > 0) {
+          negativeWarnings.forEach(item => {
+            const newStock = item.current_stock - item.quantity;
+            toast({
+              title: "Negative Stock Warning",
+              description: `${item.product_name} now NEGATIVE: ${newStock}`,
+              variant: "destructive",
+            });
+          });
+        }
+        
+        // Reset form
+        setLineItems([{ id: '1', product_id: '', product_name: '', quantity: 1, selling_price: 0, current_stock: 0 }]);
+        setPaymentType('Cash');
+        setNotes('');
+      },
     });
-    
-    // Reset form
-    setLineItems([{ id: '1', product_id: '', product_name: '', quantity: 1, selling_price: 0, current_stock: 0 }]);
-    setPaymentType('Cash');
-    setNotes('');
-    setIsSubmitting(false);
   };
 
   const handleClear = () => {
@@ -180,44 +174,25 @@ export default function Sales() {
   };
 
   const handleReverseSale = () => {
-    if (reverseSale && reverseConfirmText === 'CONFIRM') {
-      setSales(sales.map(s => 
-        s.id === reverseSale.id ? { ...s, is_reversed: true } : s
-      ));
-      toast({
-        title: "Sale Reversed",
-        description: `Sale ${reverseSale.id} has been reversed. Stock quantities have been restored.`,
+    if (reverseSaleData && reverseConfirmText === 'CONFIRM') {
+      reverseSale.mutate(reverseSaleData.id, {
+        onSuccess: () => {
+          setReverseSaleData(null);
+          setReverseConfirmText('');
+        },
       });
-      setReverseSale(null);
-      setReverseConfirmText('');
     }
   };
 
-  // Filter sales
+  // Filter sales by search
   const filteredSales = sales.filter(sale => {
-    const matchesSearch = sale.items?.some(item => {
+    if (!searchQuery) return true;
+    const matchesId = sale.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesProduct = sale.items?.some(item => {
       const product = products.find(p => p.id === item.product_id);
       return product?.name.toLowerCase().includes(searchQuery.toLowerCase());
-    }) || sale.id.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const saleDate = new Date(sale.created_at);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let matchesDate = true;
-    if (dateFilter === 'today') {
-      matchesDate = saleDate >= today;
-    } else if (dateFilter === '7days') {
-      const weekAgo = new Date(today);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      matchesDate = saleDate >= weekAgo;
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date(today);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      matchesDate = saleDate >= monthAgo;
-    }
-
-    return matchesSearch && matchesDate;
+    });
+    return matchesId || matchesProduct;
   });
 
   const getItemsSummary = (sale: Sale) => {
@@ -227,6 +202,16 @@ export default function Sales() {
       return `${item.quantity}× ${product?.name.split(' ')[0] || 'Item'}`;
     }).join(', ');
   };
+
+  const isLoading = productsLoading || salesLoading;
+
+  if (isLoading && products.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -372,9 +357,9 @@ export default function Sales() {
               <Button type="button" variant="outline" onClick={handleClear} className="flex-1">
                 Clear
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="flex-1 gap-2">
+              <Button type="submit" disabled={createSale.isPending} className="flex-1 gap-2">
                 <DollarSign className="h-4 w-4" />
-                {isSubmitting ? 'Recording...' : 'Record Sale'}
+                {createSale.isPending ? 'Recording...' : 'Record Sale'}
               </Button>
             </div>
           </form>
@@ -400,14 +385,19 @@ export default function Sales() {
                   className="pl-10"
                 />
               </div>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+              <Select value={dateFilter} onValueChange={(value: DateFilterType) => setDateFilter(value)}>
+                <SelectTrigger className="w-full sm:w-48">
                   <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue />
+                  <SelectValue>{getDateFilterLabel(dateFilter)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="day_before">Day Before Yesterday</SelectItem>
                   <SelectItem value="7days">Last 7 Days</SelectItem>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="week_before_last">2 Weeks Ago</SelectItem>
                   <SelectItem value="month">This Month</SelectItem>
                   <SelectItem value="all">All Time</SelectItem>
                 </SelectContent>
@@ -416,68 +406,74 @@ export default function Sales() {
           </div>
 
           <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-            <table className="data-table">
-              <thead className="sticky top-0 bg-card">
-                <tr>
-                  <th>Sale ID</th>
-                  <th>Date & Time</th>
-                  <th>Items</th>
-                  <th className="text-right">Units</th>
-                  <th className="text-right">Value</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSales.map((sale) => (
-                  <tr 
-                    key={sale.id}
-                    className={cn(sale.is_reversed && "opacity-50")}
-                  >
-                    <td className="font-medium">
-                      {sale.id}
-                      {sale.is_reversed && (
-                        <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          REVERSED
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-muted-foreground">
-                      {format(new Date(sale.created_at), 'MMM d, HH:mm')}
-                    </td>
-                    <td className="text-sm max-w-[150px] truncate">
-                      {getItemsSummary(sale)}
-                    </td>
-                    <td className="text-right">{sale.total_units}</td>
-                    <td className="text-right currency font-medium">
-                      {formatETB(sale.total_value)}
-                    </td>
-                    <td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setViewingSale(sale)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {!sale.is_reversed && (
+            {salesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead className="sticky top-0 bg-card">
+                  <tr>
+                    <th>Sale ID</th>
+                    <th>Date & Time</th>
+                    <th>Items</th>
+                    <th className="text-right">Units</th>
+                    <th className="text-right">Value</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSales.map((sale) => (
+                    <tr 
+                      key={sale.id}
+                      className={cn(sale.is_reversed && "opacity-50")}
+                    >
+                      <td className="font-medium">
+                        {sale.id.substring(0, 8)}
+                        {sale.is_reversed && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            REVERSED
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-muted-foreground">
+                        {format(new Date(sale.created_at), 'MMM d, HH:mm')}
+                      </td>
+                      <td className="text-sm max-w-[150px] truncate">
+                        {getItemsSummary(sale)}
+                      </td>
+                      <td className="text-right">{sale.total_units}</td>
+                      <td className="text-right currency font-medium">
+                        {formatETB(sale.total_value)}
+                      </td>
+                      <td className="text-right">
+                        <div className="flex justify-end gap-1">
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => setReverseSale(sale)}
-                            className="text-destructive hover:text-destructive"
+                            onClick={() => setViewingSale(sale)}
                           >
-                            <RotateCcw className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          {!sale.is_reversed && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => setReverseSaleData(sale)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
 
-            {filteredSales.length === 0 && (
+            {!salesLoading && filteredSales.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg">No sales found</p>
@@ -492,7 +488,7 @@ export default function Sales() {
       <Dialog open={!!viewingSale} onOpenChange={() => setViewingSale(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sale Details - {viewingSale?.id}</DialogTitle>
+            <DialogTitle>Sale Details - {viewingSale?.id.substring(0, 8)}</DialogTitle>
           </DialogHeader>
           {viewingSale && (
             <div className="space-y-4">
@@ -541,7 +537,7 @@ export default function Sales() {
                 <Button 
                   variant="outline" 
                   className="w-full gap-2 text-destructive"
-                  onClick={() => { setViewingSale(null); setReverseSale(viewingSale); }}
+                  onClick={() => { setViewingSale(null); setReverseSaleData(viewingSale); }}
                 >
                   <RotateCcw className="h-4 w-4" />
                   Reverse This Sale
@@ -553,16 +549,16 @@ export default function Sales() {
       </Dialog>
 
       {/* Reverse Sale Confirmation */}
-      <AlertDialog open={!!reverseSale} onOpenChange={() => { setReverseSale(null); setReverseConfirmText(''); }}>
+      <AlertDialog open={!!reverseSaleData} onOpenChange={() => { setReverseSaleData(null); setReverseConfirmText(''); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reverse Sale {reverseSale?.id}?</AlertDialogTitle>
+            <AlertDialogTitle>Reverse Sale {reverseSaleData?.id.substring(0, 8)}?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>
                 Reversing will add the sold quantities back to stock. This action creates a reversal record and is auditable.
               </p>
               <p className="font-medium">
-                Sale total: {reverseSale && formatETB(reverseSale.total_value)}
+                Sale total: {reverseSaleData && formatETB(reverseSaleData.total_value)}
               </p>
               <div className="mt-4">
                 <Label htmlFor="confirm-text" className="text-sm">
@@ -582,10 +578,10 @@ export default function Sales() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleReverseSale}
-              disabled={reverseConfirmText !== 'CONFIRM'}
+              disabled={reverseConfirmText !== 'CONFIRM' || reverseSale.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Reverse Sale
+              {reverseSale.isPending ? 'Reversing...' : 'Reverse Sale'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

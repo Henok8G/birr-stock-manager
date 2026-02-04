@@ -7,7 +7,8 @@ import {
   TrendingUp,
   Plus,
   ClipboardList,
-  FileDown
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KPICard } from '@/components/dashboard/KPICard';
@@ -17,13 +18,8 @@ import { LowStockTable } from '@/components/dashboard/LowStockTable';
 import { AddProductModal } from '@/components/modals/AddProductModal';
 import { AddStockModal } from '@/components/modals/AddStockModal';
 import { RecordSaleModal } from '@/components/modals/RecordSaleModal';
-import { 
-  mockDashboardSummary, 
-  mockDailySales, 
-  mockTopSellers,
-  getLowStockProducts,
-  mockProducts
-} from '@/data/mockData';
+import { useDashboard } from '@/hooks/useDashboard';
+import { useProducts } from '@/hooks/useProducts';
 import { formatETB, Product } from '@/types/inventory';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,8 +30,8 @@ export default function Dashboard() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
-  const lowStockProducts = getLowStockProducts();
-  const summary = mockDashboardSummary;
+  const { data: dashboardData, isLoading } = useDashboard();
+  const { products } = useProducts();
 
   const handleAddStock = (product: Product) => {
     setSelectedProduct(product);
@@ -47,8 +43,27 @@ export default function Dashboard() {
       title: "Export Started",
       description: "Dashboard snapshot is being generated as PDF...",
     });
-    // PDF export would be implemented with backend
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const summary = dashboardData?.summary || {
+    totalProducts: 0,
+    totalUnitsInStock: 0,
+    todayUnitsSold: 0,
+    todaySalesValue: 0,
+    totalStockValue: 0,
+  };
+
+  const dailySales = dashboardData?.dailySales || [];
+  const topSellers = dashboardData?.topSellers || [];
+  const lowStockProducts = dashboardData?.lowStockProducts || [];
 
   return (
     <div className="space-y-6">
@@ -95,14 +110,12 @@ export default function Dashboard() {
           title="Today Units Sold"
           value={summary.todayUnitsSold}
           icon={ShoppingBag}
-          trend={{ value: 12, isPositive: true }}
         />
         <KPICard
           title="Today Sales Value"
           value={formatETB(summary.todaySalesValue)}
           icon={DollarSign}
           variant="accent"
-          trend={{ value: 8, isPositive: true }}
         />
         <KPICard
           title="Total Stock Value"
@@ -116,11 +129,11 @@ export default function Dashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SalesChart 
-          data={mockDailySales} 
+          data={dailySales} 
           dataKey="units" 
           title="Daily Units Sold (Last 7 Days)" 
         />
-        <TopSellersChart data={mockTopSellers} />
+        <TopSellersChart data={topSellers} />
       </div>
 
       {/* Low Stock Table */}
@@ -137,13 +150,13 @@ export default function Dashboard() {
       <AddStockModal 
         open={isAddStockOpen} 
         onOpenChange={setIsAddStockOpen}
-        products={mockProducts}
+        products={products}
         selectedProduct={selectedProduct}
       />
       <RecordSaleModal 
         open={isRecordSaleOpen} 
         onOpenChange={setIsRecordSaleOpen}
-        products={mockProducts}
+        products={products}
       />
     </div>
   );

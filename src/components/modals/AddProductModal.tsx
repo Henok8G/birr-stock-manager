@@ -8,7 +8,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -17,24 +16,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ProductCategory, ProductFormData } from '@/types/inventory';
-import { useToast } from '@/hooks/use-toast';
+import { useProducts } from '@/hooks/useProducts';
 
 interface AddProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: (product: ProductFormData) => void;
 }
 
 const categories: ProductCategory[] = ['Beer', 'Soda', 'Water', 'Alcohol', 'Juice', 'Other'];
 
-export function AddProductModal({ open, onOpenChange, onSuccess }: AddProductModalProps) {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
+  const { createProduct } = useProducts();
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
-    sku: '',
     category: 'Beer',
-    unit_size: '',
     buying_price: 0,
     selling_price: 0,
     opening_stock: 0,
@@ -70,29 +65,20 @@ export function AddProductModal({ open, onOpenChange, onSuccess }: AddProductMod
     
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    
-    // Simulate API call - will be replaced with Lovable Cloud
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    toast({
-      title: "Product Added",
-      description: `${formData.name} has been added to inventory.`,
+    createProduct.mutate(formData, {
+      onSuccess: () => {
+        onOpenChange(false);
+        setFormData({
+          name: '',
+          category: 'Beer',
+          buying_price: 0,
+          selling_price: 0,
+          opening_stock: 0,
+          reorder_level: 0,
+        });
+        setErrors({});
+      },
     });
-    
-    onSuccess?.(formData);
-    onOpenChange(false);
-    setFormData({
-      name: '',
-      sku: '',
-      category: 'Beer',
-      unit_size: '',
-      buying_price: 0,
-      selling_price: 0,
-      opening_stock: 0,
-      reorder_level: 0,
-    });
-    setIsSubmitting(false);
   };
 
   return (
@@ -117,44 +103,23 @@ export function AddProductModal({ open, onOpenChange, onSuccess }: AddProductMod
             {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="form-group">
-              <Label htmlFor="sku" className="form-label">SKU</Label>
-              <Input
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="e.g., BRH-001"
-              />
-            </div>
-            <div className="form-group">
-              <Label htmlFor="category" className="form-label">
-                Category <span className="text-destructive">*</span>
-              </Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value: ProductCategory) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="form-group">
-            <Label htmlFor="unit_size" className="form-label">Unit Size</Label>
-            <Input
-              id="unit_size"
-              value={formData.unit_size}
-              onChange={(e) => setFormData({ ...formData, unit_size: e.target.value })}
-              placeholder="e.g., 330ml, 500ml, 1L"
-            />
+            <Label htmlFor="category" className="form-label">
+              Category <span className="text-destructive">*</span>
+            </Label>
+            <Select 
+              value={formData.category} 
+              onValueChange={(value: ProductCategory) => setFormData({ ...formData, category: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -215,8 +180,8 @@ export function AddProductModal({ open, onOpenChange, onSuccess }: AddProductMod
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Product'}
+            <Button type="submit" disabled={createProduct.isPending}>
+              {createProduct.isPending ? 'Adding...' : 'Add Product'}
             </Button>
           </div>
         </form>

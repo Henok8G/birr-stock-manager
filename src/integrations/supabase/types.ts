@@ -14,7 +14,196 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity: string
+          entity_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity: string
+          entity_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity?: string
+          entity_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          buying_price: number
+          category: Database["public"]["Enums"]["product_category"]
+          created_at: string
+          id: string
+          name: string
+          opening_stock: number
+          reorder_level: number | null
+          selling_price: number
+          updated_at: string
+        }
+        Insert: {
+          buying_price?: number
+          category: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          id?: string
+          name: string
+          opening_stock?: number
+          reorder_level?: number | null
+          selling_price?: number
+          updated_at?: string
+        }
+        Update: {
+          buying_price?: number
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          id?: string
+          name?: string
+          opening_stock?: number
+          reorder_level?: number | null
+          selling_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          sale_id: string
+          selling_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity: number
+          sale_id: string
+          selling_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          sale_id?: string
+          selling_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          created_at: string
+          id: string
+          is_reversed: boolean | null
+          notes: string | null
+          payment_type: Database["public"]["Enums"]["payment_type"] | null
+          reversed_sale_id: string | null
+          total_units: number
+          total_value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_reversed?: boolean | null
+          notes?: string | null
+          payment_type?: Database["public"]["Enums"]["payment_type"] | null
+          reversed_sale_id?: string | null
+          total_units?: number
+          total_value?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_reversed?: boolean | null
+          notes?: string | null
+          payment_type?: Database["public"]["Enums"]["payment_type"] | null
+          reversed_sale_id?: string | null
+          total_units?: number
+          total_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_reversed_sale_id_fkey"
+            columns: ["reversed_sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_entries: {
+        Row: {
+          buying_price: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          reason: string | null
+          type: Database["public"]["Enums"]["stock_entry_type"]
+        }
+        Insert: {
+          buying_price?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+          type: Database["public"]["Enums"]["stock_entry_type"]
+        }
+        Update: {
+          buying_price?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          type?: Database["public"]["Enums"]["stock_entry_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +212,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      payment_type: "Cash" | "Card" | "Other"
+      product_category:
+        | "Beer"
+        | "Soda"
+        | "Water"
+        | "Alcohol"
+        | "Juice"
+        | "Other"
+      stock_entry_type: "inbound" | "adjustment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +347,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      payment_type: ["Cash", "Card", "Other"],
+      product_category: ["Beer", "Soda", "Water", "Alcohol", "Juice", "Other"],
+      stock_entry_type: ["inbound", "adjustment"],
+    },
   },
 } as const
