@@ -76,7 +76,7 @@ export function Sidebar({
 
           {/* Footer */}
           <div className="px-6 py-4 text-xs text-sidebar-foreground/40">
-            <p>© 2025 BevStock</p>
+            <p>© 2025 Boost Addis</p>
             <p>Restaurant Inventory</p>
           </div>
         </div>
