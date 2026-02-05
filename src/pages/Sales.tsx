@@ -3,7 +3,6 @@ import {
   Search, 
   Calendar,
   Download,
-  Eye,
   RotateCcw,
   ShoppingCart,
   Plus,
@@ -414,9 +413,8 @@ export default function Sales() {
               <table className="data-table">
                 <thead className="sticky top-0 bg-card">
                   <tr>
-                    <th>Sale ID</th>
-                    <th>Date & Time</th>
                     <th>Items</th>
+                    <th>Date & Time</th>
                     <th className="text-right">Units</th>
                     <th className="text-right">Value</th>
                     <th className="text-right">Actions</th>
@@ -426,12 +424,16 @@ export default function Sales() {
                   {filteredSales.map((sale) => (
                     <tr 
                       key={sale.id}
-                      className={cn(sale.is_reversed && "opacity-50")}
+                      className={cn(
+                        "cursor-pointer hover:bg-muted/50 transition-colors",
+                        sale.is_reversed && "opacity-50"
+                      )}
+                      onClick={() => setViewingSale(sale)}
                     >
-                      <td className="font-medium">
-                        {sale.id.substring(0, 8)}
+                      <td className="font-medium max-w-[200px]">
+                        <span className="truncate block">{getItemsSummary(sale)}</span>
                         {sale.is_reversed && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                             REVERSED
                           </span>
                         )}
@@ -439,33 +441,24 @@ export default function Sales() {
                       <td className="text-muted-foreground">
                         {format(new Date(sale.created_at), 'MMM d, HH:mm')}
                       </td>
-                      <td className="text-sm max-w-[150px] truncate">
-                        {getItemsSummary(sale)}
-                      </td>
                       <td className="text-right">{sale.total_units}</td>
                       <td className="text-right currency font-medium">
                         {formatETB(sale.total_value)}
                       </td>
                       <td className="text-right">
-                        <div className="flex justify-end gap-1">
+                        {!sale.is_reversed && (
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => setViewingSale(sale)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReverseSaleData(sale);
+                            }}
+                            className="text-destructive hover:text-destructive"
                           >
-                            <Eye className="h-4 w-4" />
+                            <RotateCcw className="h-4 w-4" />
                           </Button>
-                          {!sale.is_reversed && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => setReverseSaleData(sale)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))}
