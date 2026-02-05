@@ -1,73 +1,118 @@
-# Welcome to your Lovable project
+# Birr Stock Manager
 
-## Project info
+Birr Stock Manager is a modern web-based inventory and sales management system designed for restaurants and small businesses to track drink products, stock movement, and daily sales using Ethiopian Birr (ETB).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+The system focuses on clarity, accuracy, and real-world flexibility — including support for negative stock — while keeping the interface simple, professional, and easy to use.
 
-## How can I edit this code?
+🔗 Live demo: https://boost-stock-manager.vercel.app/
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## ✨ Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- 📊 **Dashboard Overview**
+  - Total products
+  - Current stock levels
+  - Daily & weekly sales summaries
+  - Stock value in ETB
+  - Visual alerts for low and negative stock
 
-Changes made via Lovable will be committed automatically to this repo.
+- 📦 **Inventory Management**
+  - Add and manage drink products (beer, soda, water, alcohol, etc.)
+  - Track opening stock, inbound stock, adjustments, and current stock
+  - Manual stock adjustments with audit reasons
+  - Negative stock allowed and clearly highlighted with color indicators
 
-**Use your preferred IDE**
+- 💰 **Sales Tracking**
+  - Manual POS-style sales entry
+  - Multi-product sales per transaction
+  - Automatic stock deduction
+  - Sale reversal with full audit trail
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 📄 **Reports & Export**
+  - Daily and weekly sales reports
+  - Stock valuation reports
+  - Export reports to **PDF**
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 👥 **User Access**
+  - Owner and Manager roles
+  - Email & password authentication
+  - Full access for both roles (family-run business model)
 
-Follow these steps:
+- 🎨 **UI / UX**
+  - Clean, professional design
+  - Dark Green & Gold branding
+  - Light mode & Dark mode support
+  - Fully responsive (desktop & mobile friendly)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- 💱 **Currency Support**
+  - Ethiopian Birr (ETB) used consistently across the system
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🧠 Design Philosophy
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Birr Stock Manager is built as an **internal management system**, not a public-facing restaurant website.  
+There are **no promotions, discounts, combos, barcode scanning, or expiry tracking** — only the features needed for accurate stock and sales control.
 
-**Edit a file directly in GitHub**
+The system intentionally allows **negative stock** to reflect real-world operations and shortages, while making those situations highly visible.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🛠️ Tech Stack (High-Level)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Frontend:** Vite-based modern frontend stack
+- **Backend:** Application logic implemented by the developer
+- **Database:** Structured relational data models
+- **Authentication:** Email & password (stored securely)
+- **Reports:** PDF generation
+- **Deployment:** Vercel
 
-## What technologies are used for this project?
+> Note: While Lovable AI was used during early scaffolding, the majority of the system logic, structure, and implementation was custom-built.
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🚀 Getting Started (High-Level)
 
-## How can I deploy this project?
+This repository represents a **private production system**.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+To run or extend the project locally, you will need:
+- Node.js (modern version)
+- Environment variables for authentication and data storage
+- Deployment configuration (Vercel or equivalent)
 
-## Can I connect a custom domain to my Lovable project?
+Detailed setup instructions are intentionally omitted.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔐 Access & Security
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Authentication is required to access the system
+- Only authorized Owner and Manager accounts can log in
+- All stock and sales changes are auditable
+
+---
+
+## 📌 Use Cases
+
+- Restaurant drink inventory management
+- Small business stock tracking
+- Family-run business operations
+- Internal sales monitoring and reporting
+
+---
+
+## 📄 License
+
+**Private – All rights reserved**
+
+This project is not licensed for redistribution, resale, or public reuse without explicit permission from the author.
+
+---
+
+## 👤 Author
+
+Built and maintained by the project owner.  
+Designed with real operational needs in mind.
+
+---
