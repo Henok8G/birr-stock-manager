@@ -452,7 +452,7 @@ export default function Sales() {
                         "cursor-pointer hover:bg-muted/50 transition-colors",
                         sale.is_reversed && "opacity-50"
                       )}
-                      onClick={() => setViewingSale(sale)}
+                      onClick={() => handleViewSale(sale)}
                     >
                       <td className="font-medium max-w-[200px]">
                         <span className="truncate block">{getItemsSummary(sale)}</span>
