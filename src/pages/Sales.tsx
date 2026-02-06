@@ -502,7 +502,7 @@ export default function Sales() {
       </div>
 
       {/* View Sale Modal */}
-      <Dialog open={!!viewingSale} onOpenChange={() => setViewingSale(null)}>
+      <Dialog open={!!viewingSale} onOpenChange={() => { setViewingSale(null); setEditingNote(false); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Sale Details - {viewingSale?.id.substring(0, 8)}</DialogTitle>
@@ -543,12 +543,57 @@ export default function Sales() {
                 </div>
               </div>
 
-              {viewingSale.notes && (
-                <div className="p-3 bg-muted/50 rounded text-sm">
-                  <p className="text-muted-foreground">Notes:</p>
-                  <p>{viewingSale.notes}</p>
+              {/* Notes Section with Edit */}
+              <div className="p-3 bg-muted/50 rounded text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-muted-foreground font-medium">Notes</p>
+                  {!editingNote ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => setEditingNote(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-success"
+                        onClick={handleSaveNote}
+                        disabled={updateSaleNote.isPending}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => {
+                          setEditingNote(false);
+                          setEditedNote(viewingSale.notes || '');
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+                {editingNote ? (
+                  <Textarea
+                    value={editedNote}
+                    onChange={(e) => setEditedNote(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                ) : (
+                  <p className="text-foreground">{viewingSale.notes || 'No notes'}</p>
+                )}
+              </div>
 
               {!viewingSale.is_reversed && (
                 <Button 
