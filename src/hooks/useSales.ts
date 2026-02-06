@@ -305,6 +305,44 @@ export function useSales(dateFilter: DateFilterType = 'today') {
     },
   });
 
+  const updateSaleNote = useMutation({
+    mutationFn: async ({ saleId, notes }: { saleId: string; notes: string }) => {
+      const { data, error } = await supabase
+        .from('sales')
+        .update({ notes })
+        .eq('id', saleId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create audit log
+      await supabase.from('audit_logs').insert({
+        entity: 'sale',
+        entity_id: saleId,
+        action: 'sale_note_updated',
+        details: { notes },
+      });
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      
+      toast({
+        title: "Note Updated",
+        description: "Sale note has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update note",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     sales: query.data || [],
     isLoading: query.isLoading,
@@ -312,5 +350,6 @@ export function useSales(dateFilter: DateFilterType = 'today') {
     refetch: query.refetch,
     createSale,
     reverseSale,
+    updateSaleNote,
   };
 }
