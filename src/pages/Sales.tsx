@@ -59,7 +59,7 @@ export default function Sales() {
   const { toast } = useToast();
   const { products, isLoading: productsLoading } = useProducts();
   const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
-  const { sales, isLoading: salesLoading, createSale, reverseSale } = useSales(dateFilter);
+  const { sales, isLoading: salesLoading, createSale, reverseSale, updateSaleNote } = useSales(dateFilter);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sale entry form
