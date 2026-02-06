@@ -8,7 +8,10 @@ import {
   Plus,
   Trash2,
   DollarSign,
-  Loader2
+  Loader2,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +62,7 @@ export default function Sales() {
   const { toast } = useToast();
   const { products, isLoading: productsLoading } = useProducts();
   const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
-  const { sales, isLoading: salesLoading, createSale, reverseSale } = useSales(dateFilter);
+  const { sales, isLoading: salesLoading, createSale, reverseSale, updateSaleNote } = useSales(dateFilter);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sale entry form
@@ -71,10 +74,31 @@ export default function Sales() {
 
   // View sale modal
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
+  const [editingNote, setEditingNote] = useState(false);
+  const [editedNote, setEditedNote] = useState('');
 
   // Reversal dialog
   const [reverseSaleData, setReverseSaleData] = useState<Sale | null>(null);
   const [reverseConfirmText, setReverseConfirmText] = useState('');
+
+  // Handle opening sale detail
+  const handleViewSale = (sale: Sale) => {
+    setViewingSale(sale);
+    setEditedNote(sale.notes || '');
+    setEditingNote(false);
+  };
+
+  const handleSaveNote = () => {
+    if (viewingSale) {
+      updateSaleNote.mutate({ saleId: viewingSale.id, notes: editedNote }, {
+        onSuccess: () => {
+          setEditingNote(false);
+          // Update local state
+          setViewingSale({ ...viewingSale, notes: editedNote });
+        },
+      });
+    }
+  };
 
   // Line item management
   const addLineItem = () => {
@@ -428,7 +452,7 @@ export default function Sales() {
                         "cursor-pointer hover:bg-muted/50 transition-colors",
                         sale.is_reversed && "opacity-50"
                       )}
-                      onClick={() => setViewingSale(sale)}
+                      onClick={() => handleViewSale(sale)}
                     >
                       <td className="font-medium max-w-[200px]">
                         <span className="truncate block">{getItemsSummary(sale)}</span>
@@ -478,7 +502,7 @@ export default function Sales() {
       </div>
 
       {/* View Sale Modal */}
-      <Dialog open={!!viewingSale} onOpenChange={() => setViewingSale(null)}>
+      <Dialog open={!!viewingSale} onOpenChange={() => { setViewingSale(null); setEditingNote(false); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Sale Details - {viewingSale?.id.substring(0, 8)}</DialogTitle>
@@ -519,12 +543,57 @@ export default function Sales() {
                 </div>
               </div>
 
-              {viewingSale.notes && (
-                <div className="p-3 bg-muted/50 rounded text-sm">
-                  <p className="text-muted-foreground">Notes:</p>
-                  <p>{viewingSale.notes}</p>
+              {/* Notes Section with Edit */}
+              <div className="p-3 bg-muted/50 rounded text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-muted-foreground font-medium">Notes</p>
+                  {!editingNote ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => setEditingNote(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-success"
+                        onClick={handleSaveNote}
+                        disabled={updateSaleNote.isPending}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => {
+                          setEditingNote(false);
+                          setEditedNote(viewingSale.notes || '');
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+                {editingNote ? (
+                  <Textarea
+                    value={editedNote}
+                    onChange={(e) => setEditedNote(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                ) : (
+                  <p className="text-foreground">{viewingSale.notes || 'No notes'}</p>
+                )}
+              </div>
 
               {!viewingSale.is_reversed && (
                 <Button 
