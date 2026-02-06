@@ -71,10 +71,31 @@ export default function Sales() {
 
   // View sale modal
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
+  const [editingNote, setEditingNote] = useState(false);
+  const [editedNote, setEditedNote] = useState('');
 
   // Reversal dialog
   const [reverseSaleData, setReverseSaleData] = useState<Sale | null>(null);
   const [reverseConfirmText, setReverseConfirmText] = useState('');
+
+  // Handle opening sale detail
+  const handleViewSale = (sale: Sale) => {
+    setViewingSale(sale);
+    setEditedNote(sale.notes || '');
+    setEditingNote(false);
+  };
+
+  const handleSaveNote = () => {
+    if (viewingSale) {
+      updateSaleNote.mutate({ saleId: viewingSale.id, notes: editedNote }, {
+        onSuccess: () => {
+          setEditingNote(false);
+          // Update local state
+          setViewingSale({ ...viewingSale, notes: editedNote });
+        },
+      });
+    }
+  };
 
   // Line item management
   const addLineItem = () => {
