@@ -8,7 +8,10 @@ import {
   Plus,
   Trash2,
   DollarSign,
-  Loader2
+  Loader2,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
