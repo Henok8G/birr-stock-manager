@@ -28,7 +28,7 @@ export function KPICard({
   const content = <CardWrapper onClick={onClick} className={cn("kpi-card text-left w-full mx-0 shadow-md", variant === 'accent' && "kpi-card-accent", variant === 'warning' && "border-warning/30 bg-warning/5", variant === 'negative' && "border-destructive/30 bg-destructive/5", onClick && "cursor-pointer hover:scale-[1.02] active:scale-[0.98]")}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className={cn("kpi-value", variant === 'negative' && "text-destructive")}>
+          <p className={cn("kpi-value mx-[10px]", variant === 'negative' && "text-destructive")}>
             {value}
           </p>
           <p className="kpi-label">{title}</p>
