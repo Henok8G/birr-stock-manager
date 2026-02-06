@@ -6,11 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, isLoading: authLoading, user } = useAuth();
+  const {
+    signIn,
+    isLoading: authLoading,
+    user
+  } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,30 +22,29 @@ export default function Auth() {
   // Redirect if already logged in
   if (user) {
     const from = (location.state as any)?.from?.pathname || '/';
-    navigate(from, { replace: true });
+    navigate(from, {
+      replace: true
+    });
     return null;
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-
     setIsSubmitting(true);
     try {
       await signIn(email, password);
       const from = (location.state as any)?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      navigate(from, {
+        replace: true
+      });
     } catch (error) {
       // Error handled in useAuth
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const isLoading = authLoading || isSubmitting;
-
-  return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+  return <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left side - Branding */}
       <div className="lg:flex-1 bg-gradient-to-br from-primary via-primary/95 to-primary/90 p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
         {/* Background pattern */}
@@ -61,7 +63,7 @@ export default function Auth() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-primary-foreground">Boost Addis</h1>
-              <p className="text-primary-foreground/70 text-sm">Restaurant Inventory System</p>
+              
             </div>
           </div>
         </div>
@@ -117,16 +119,7 @@ export default function Auth() {
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="owner@boostaddis.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12"
-                  required
-                  disabled={isLoading}
-                />
+                <Input id="email" type="email" placeholder="owner@boostaddis.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-12" required disabled={isLoading} />
               </div>
             </div>
 
@@ -136,46 +129,18 @@ export default function Auth() {
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-12"
-                  required
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
+                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className="pl-10 pr-10 h-12" required disabled={isLoading} />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)} disabled={isLoading}>
+                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                 </Button>
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-12 text-base font-medium"
-              disabled={isLoading || !email || !password}
-            >
-              {isLoading ? (
-                <>
+            <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading || !email || !password}>
+              {isLoading ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing In...
-                </>
-              ) : (
-                'Sign In'
-              )}
+                </> : 'Sign In'}
             </Button>
           </form>
 
@@ -188,6 +153,5 @@ export default function Auth() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
