@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
@@ -19,25 +18,26 @@ export function useAuth() {
     hasRole: false,
   });
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          // Check if user has a role
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id);
-          
-          setAuthState({
-            user: session.user,
-            session,
-            isLoading: false,
-            hasRole: (roles && roles.length > 0) || false,
-          });
+          // Check if user has a role - use setTimeout to avoid potential deadlock
+          setTimeout(async () => {
+            const { data: roles } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id);
+            
+            setAuthState({
+              user: session.user,
+              session,
+              isLoading: false,
+              hasRole: (roles && roles.length > 0) || false,
+            });
+          }, 0);
         } else {
           setAuthState({
             user: null,
@@ -78,52 +78,42 @@ export function useAuth() {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Check if user has a role
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id);
+    // Check if user has a role
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', data.user.id);
 
-      if (rolesError) throw rolesError;
+    if (rolesError) throw rolesError;
 
-      if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        throw new Error('Access denied. You do not have permission to access this system.');
-      }
-
-      toast({
-        title: "Welcome back!",
-        description: `Signed in as ${email}`,
-      });
-
-      navigate('/');
-    } catch (error: any) {
-      toast({
-        title: "Sign In Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
+    if (!roles || roles.length === 0) {
+      await supabase.auth.signOut();
+      throw new Error('Access denied. You do not have permission to access this system.');
     }
-  };
 
-  const signOut = async () => {
+    toast({
+      title: "Welcome back!",
+      description: `Signed in as ${email}`,
+    });
+
+    return data;
+  }, [toast]);
+
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
       toast({
         title: "Signed Out",
         description: "You have been signed out successfully.",
       });
-      navigate('/auth');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -131,7 +121,7 @@ export function useAuth() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   return {
     ...authState,

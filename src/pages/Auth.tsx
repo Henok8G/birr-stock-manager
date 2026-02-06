@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Wine, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +8,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 export default function Auth() {
-  const { signIn, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, isLoading: authLoading, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already logged in
+  if (user) {
+    const from = (location.state as any)?.from?.pathname || '/';
+    navigate(from, { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +30,8 @@ export default function Auth() {
     setIsSubmitting(true);
     try {
       await signIn(email, password);
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (error) {
       // Error handled in useAuth
     } finally {
