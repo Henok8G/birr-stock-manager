@@ -44,6 +44,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useSales, DateFilterType, getDateFilterLabel, Sale } from '@/hooks/useSales';
 import { PaymentType, formatETB, getStockStatus } from '@/types/inventory';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -59,6 +60,7 @@ interface SaleLineItem {
 }
 
 export default function Sales() {
+  const { isOwner } = useAuth();
   const { toast } = useToast();
   const { products, isLoading: productsLoading } = useProducts();
   const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
@@ -470,7 +472,7 @@ export default function Sales() {
                         {formatETB(sale.total_value)}
                       </td>
                       <td className="text-right">
-                        {!sale.is_reversed && (
+                        {!sale.is_reversed && isOwner && (
                           <Button 
                             variant="ghost" 
                             size="icon"
@@ -548,15 +550,17 @@ export default function Sales() {
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-muted-foreground font-medium">Notes</p>
                   {!editingNote ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 text-xs"
-                      onClick={() => setEditingNote(true)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                      Edit
-                    </Button>
+                    isOwner && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setEditingNote(true)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
+                    )
                   ) : (
                     <div className="flex gap-1">
                       <Button
@@ -595,7 +599,7 @@ export default function Sales() {
                 )}
               </div>
 
-              {!viewingSale.is_reversed && (
+              {!viewingSale.is_reversed && isOwner && (
                 <Button 
                   variant="outline" 
                   className="w-full gap-2 text-destructive"

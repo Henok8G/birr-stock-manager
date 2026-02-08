@@ -3,11 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
 
+export type AppRole = 'owner' | 'manager';
+
 export interface AuthState {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
   hasRole: boolean;
+  role: AppRole | null;
 }
 
 export function useAuth() {
@@ -16,26 +19,28 @@ export function useAuth() {
     session: null,
     isLoading: true,
     hasRole: false,
+    role: null,
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          // Check if user has a role - use setTimeout to avoid potential deadlock
           setTimeout(async () => {
             const { data: roles } = await supabase
               .from('user_roles')
               .select('role')
               .eq('user_id', session.user.id);
             
+            const userRole = roles && roles.length > 0 ? (roles[0].role as AppRole) : null;
+            
             setAuthState({
               user: session.user,
               session,
               isLoading: false,
-              hasRole: (roles && roles.length > 0) || false,
+              hasRole: !!userRole,
+              role: userRole,
             });
           }, 0);
         } else {
@@ -44,12 +49,12 @@ export function useAuth() {
             session: null,
             isLoading: false,
             hasRole: false,
+            role: null,
           });
         }
       }
     );
 
-    // Get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const { data: roles } = await supabase
@@ -57,11 +62,14 @@ export function useAuth() {
           .select('role')
           .eq('user_id', session.user.id);
         
+        const userRole = roles && roles.length > 0 ? (roles[0].role as AppRole) : null;
+        
         setAuthState({
           user: session.user,
           session,
           isLoading: false,
-          hasRole: (roles && roles.length > 0) || false,
+          hasRole: !!userRole,
+          role: userRole,
         });
       } else {
         setAuthState({
@@ -69,6 +77,7 @@ export function useAuth() {
           session: null,
           isLoading: false,
           hasRole: false,
+          role: null,
         });
       }
     });
@@ -86,7 +95,6 @@ export function useAuth() {
 
     if (error) throw error;
 
-    // Check if user has a role
     const { data: roles, error: rolesError } = await supabase
       .from('user_roles')
       .select('role')
@@ -123,9 +131,14 @@ export function useAuth() {
     }
   }, [toast]);
 
+  const isOwner = authState.role === 'owner';
+  const isManager = authState.role === 'manager';
+
   return {
     ...authState,
     signIn,
     signOut,
+    isOwner,
+    isManager,
   };
 }
