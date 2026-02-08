@@ -45,12 +45,14 @@
  import { ProductDetailDrawer } from '@/components/inventory/ProductDetailDrawer';
  import { useProducts } from '@/hooks/useProducts';
  import { Product, getStockStatus, formatETB, ProductCategory } from '@/types/inventory';
- import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
  
  const categories: ProductCategory[] = ['Beer', 'Soda', 'Water', 'Alcohol', 'Juice', 'Other'];
  
  export default function Inventory() {
-   const { products, isLoading, deleteProduct } = useProducts();
+  const { isOwner } = useAuth();
+  const { products, isLoading, deleteProduct } = useProducts();
    const [searchQuery, setSearchQuery] = useState('');
    const [categoryFilter, setCategoryFilter] = useState<string>('all');
    const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -300,17 +302,21 @@
                              <Boxes className="h-4 w-4 mr-2" />
                              Add Inbound
                            </DropdownMenuItem>
-                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAdjustStock(product); }}>
-                             <ArrowUpDown className="h-4 w-4 mr-2" />
-                             Adjust Stock
-                           </DropdownMenuItem>
-                           <DropdownMenuItem 
-                             onClick={(e) => { e.stopPropagation(); setProductToDelete(product); }}
-                             className="text-destructive"
-                           >
-                             <Trash2 className="h-4 w-4 mr-2" />
-                             Delete
-                           </DropdownMenuItem>
+                            {isOwner && (
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAdjustStock(product); }}>
+                                <ArrowUpDown className="h-4 w-4 mr-2" />
+                                Adjust Stock
+                              </DropdownMenuItem>
+                            )}
+                            {isOwner && (
+                              <DropdownMenuItem 
+                                onClick={(e) => { e.stopPropagation(); setProductToDelete(product); }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            )}
                          </DropdownMenuContent>
                        </DropdownMenu>
                      </td>

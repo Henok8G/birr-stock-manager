@@ -6,9 +6,10 @@
  } from '@/components/ui/sheet';
  import { Button } from '@/components/ui/button';
  import { Separator } from '@/components/ui/separator';
- import { Download, Plus, ArrowUpDown, Package, Loader2 } from 'lucide-react';
- import { Product, getStockStatus, formatETB } from '@/types/inventory';
- import { cn } from '@/lib/utils';
+import { Download, Plus, ArrowUpDown, Package, Loader2 } from 'lucide-react';
+import { Product, getStockStatus, formatETB } from '@/types/inventory';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
  import { format } from 'date-fns';
  import { useProductStockEntries } from '@/hooks/useStockEntries';
  
@@ -19,7 +20,8 @@
  }
  
  export function ProductDetailDrawer({ open, onOpenChange, product }: ProductDetailDrawerProps) {
-   const { data: stockEntries = [], isLoading: entriesLoading } = useProductStockEntries(product?.id ?? null);
+    const { isOwner } = useAuth();
+    const { data: stockEntries = [], isLoading: entriesLoading } = useProductStockEntries(product?.id ?? null);
    
    if (!product) return null;
  
@@ -195,16 +197,18 @@
            </div>
  
            {/* Actions */}
-           <div className="flex gap-2 pt-4">
-             <Button className="flex-1 gap-2">
-               <Plus className="h-4 w-4" />
-               Add Stock
-             </Button>
-             <Button variant="outline" className="flex-1 gap-2">
-               <ArrowUpDown className="h-4 w-4" />
-               Adjust
-             </Button>
-           </div>
+            <div className="flex gap-2 pt-4">
+              <Button className="flex-1 gap-2">
+                <Plus className="h-4 w-4" />
+                Add Stock
+              </Button>
+              {isOwner && (
+                <Button variant="outline" className="flex-1 gap-2">
+                  <ArrowUpDown className="h-4 w-4" />
+                  Adjust
+                </Button>
+              )}
+            </div>
          </div>
        </SheetContent>
      </Sheet>
