@@ -7,7 +7,8 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  ShoppingCart
+  ShoppingCart,
+  Boxes
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,8 @@ import { useProducts } from '@/hooks/useProducts';
 import { useSales, DateFilterType, getDateFilterLabel, Sale } from '@/hooks/useSales';
 import { formatETB } from '@/types/inventory';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { InventoryHistoryTab } from '@/components/history/InventoryHistoryTab';
 import { format, parseISO, startOfDay, eachDayOfInterval, subDays, startOfWeek, endOfWeek, subWeeks, startOfMonth } from 'date-fns';
 
 // Extended date filters for history
@@ -241,244 +244,207 @@ export default function History() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="kpi-card">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary.totalUnits.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Units Sold</p>
-            </div>
-          </div>
-        </div>
-        <div className="kpi-card kpi-card-accent">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent/20">
-              <TrendingUp className="h-5 w-5 text-accent-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gradient-gold">{formatETB(summary.totalValue)}</p>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-            </div>
-          </div>
-        </div>
-        <div className="kpi-card">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-success/10">
-              <ShoppingCart className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary.transactionCount}</p>
-              <p className="text-sm text-muted-foreground">Transactions</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Tabs defaultValue="sales" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="sales" className="gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Sales History
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="gap-2">
+            <Boxes className="h-4 w-4" />
+            Inventory History
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Units Sold Line Chart */}
-        <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Package className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-lg">Units Sold</h3>
-          </div>
-          <div className="h-[280px]">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis 
-                    dataKey="displayDate" 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                    formatter={(value: number) => [value, 'Units']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="units" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No data for selected period
+        <TabsContent value="sales" className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="kpi-card">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <Package className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{summary.totalUnits.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">Units Sold</p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sales Value Line Chart */}
-        <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-accent" />
-            <h3 className="font-semibold text-lg">Sales Value (ETB)</h3>
-          </div>
-          <div className="h-[280px]">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis 
-                    dataKey="displayDate" 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                    formatter={(value: number) => [formatETB(value), 'Revenue']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="hsl(var(--accent))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--accent))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No data for selected period
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Top 5 Sellers Bar Chart */}
-        <div className="bg-card rounded-xl border border-border shadow-sm p-6 lg:col-span-2">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="h-5 w-5 text-success" />
-            <h3 className="font-semibold text-lg">Top 5 Sellers</h3>
-          </div>
-          <div className="h-[300px]">
-            {topSellers.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topSellers} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="shortName" 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                    width={100}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                    formatter={(value: number, name: string) => {
-                      if (name === 'units') return [value, 'Units Sold'];
-                      return [formatETB(value), 'Revenue'];
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="units" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Units" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No data for selected period
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Sales History Table */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-border">
-          <h3 className="font-semibold text-lg">Transaction History</h3>
-          <p className="text-sm text-muted-foreground">Click a row to view details</p>
-        </div>
-        
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : (
-            <table className="data-table">
-              <thead className="sticky top-0 bg-card">
-                <tr>
-                  <th>Items</th>
-                  <th>Date & Time</th>
-                  <th>Payment</th>
-                  <th className="text-right">Units</th>
-                  <th className="text-right">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.filter(s => !s.is_reversed && s.total_units > 0).map((sale) => (
-                  <tr 
-                    key={sale.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setSelectedSale(sale)}
-                  >
-                    <td className="font-medium max-w-[250px]">
-                      <span className="truncate block">{getItemsSummary(sale)}</span>
-                    </td>
-                    <td className="text-muted-foreground">
-                      {format(new Date(sale.created_at), 'MMM d, yyyy HH:mm')}
-                    </td>
-                    <td>
-                      <span className="px-2 py-1 text-xs rounded-full bg-muted">
-                        {sale.payment_type || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="text-right">{sale.total_units}</td>
-                    <td className="text-right currency font-medium">
-                      {formatETB(sale.total_value)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          {!isLoading && sales.filter(s => !s.is_reversed && s.total_units > 0).length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">No transactions found</p>
-              <p className="text-sm">Try selecting a different date range</p>
+            <div className="kpi-card kpi-card-accent">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent/20">
+                  <TrendingUp className="h-5 w-5 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gradient-gold">{formatETB(summary.totalValue)}</p>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="kpi-card">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-success/10">
+                  <ShoppingCart className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{summary.transactionCount}</p>
+                  <p className="text-sm text-muted-foreground">Transactions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Units Sold Line Chart */}
+            <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">Units Sold</h3>
+              </div>
+              <div className="h-[280px]">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="displayDate" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                        formatter={(value: number) => [value, 'Units']}
+                      />
+                      <Line type="monotone" dataKey="units" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No data for selected period</div>
+                )}
+              </div>
+            </div>
+
+            {/* Sales Value Line Chart */}
+            <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-accent" />
+                <h3 className="font-semibold text-lg">Sales Value (ETB)</h3>
+              </div>
+              <div className="h-[280px]">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="displayDate" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                        formatter={(value: number) => [formatETB(value), 'Revenue']}
+                      />
+                      <Line type="monotone" dataKey="value" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ fill: 'hsl(var(--accent))' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No data for selected period</div>
+                )}
+              </div>
+            </div>
+
+            {/* Top 5 Sellers Bar Chart */}
+            <div className="bg-card rounded-xl border border-border shadow-sm p-6 lg:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="h-5 w-5 text-success" />
+                <h3 className="font-semibold text-lg">Top 5 Sellers</h3>
+              </div>
+              <div className="h-[300px]">
+                {topSellers.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topSellers} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis type="category" dataKey="shortName" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={100} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                        formatter={(value: number, name: string) => {
+                          if (name === 'units') return [value, 'Units Sold'];
+                          return [formatETB(value), 'Revenue'];
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="units" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Units" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No data for selected period</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sales History Table */}
+          <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <h3 className="font-semibold text-lg">Transaction History</h3>
+              <p className="text-sm text-muted-foreground">Click a row to view details</p>
+            </div>
+            
+            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <table className="data-table">
+                  <thead className="sticky top-0 bg-card">
+                    <tr>
+                      <th>Items</th>
+                      <th>Date & Time</th>
+                      <th>Payment</th>
+                      <th className="text-right">Units</th>
+                      <th className="text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.filter(s => !s.is_reversed && s.total_units > 0).map((sale) => (
+                      <tr 
+                        key={sale.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setSelectedSale(sale)}
+                      >
+                        <td className="font-medium max-w-[250px]">
+                          <span className="truncate block">{getItemsSummary(sale)}</span>
+                        </td>
+                        <td className="text-muted-foreground">
+                          {format(new Date(sale.created_at), 'MMM d, yyyy HH:mm')}
+                        </td>
+                        <td>
+                          <span className="px-2 py-1 text-xs rounded-full bg-muted">
+                            {sale.payment_type || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="text-right">{sale.total_units}</td>
+                        <td className="text-right currency font-medium">
+                          {formatETB(sale.total_value)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {!isLoading && sales.filter(s => !s.is_reversed && s.total_units > 0).length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">No transactions found</p>
+                  <p className="text-sm">Try selecting a different date range</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="inventory">
+          <InventoryHistoryTab dateFilter={dateFilter} />
+        </TabsContent>
+      </Tabs>
 
       {/* Sale Detail Modal */}
       <Dialog open={!!selectedSale} onOpenChange={() => setSelectedSale(null)}>

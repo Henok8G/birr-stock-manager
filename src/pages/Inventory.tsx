@@ -1,16 +1,17 @@
  import { useState } from 'react';
  import { 
-   Search, 
-   Plus, 
-   Filter, 
-   Download,
-   Trash2,
-   ArrowUpDown,
-   ChevronDown,
-   Boxes,
-   AlertTriangle,
-   Loader2,
-   Package
+  Search, 
+  Plus, 
+  Filter, 
+  Download,
+  Trash2,
+  ArrowUpDown,
+  ChevronDown,
+  Boxes,
+  AlertTriangle,
+  Loader2,
+  Package,
+  Pencil
  } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
@@ -40,9 +41,10 @@
  import { Switch } from '@/components/ui/switch';
  import { Label } from '@/components/ui/label';
  import { AddProductModal } from '@/components/modals/AddProductModal';
- import { AddStockModal } from '@/components/modals/AddStockModal';
- import { AdjustStockModal } from '@/components/modals/AdjustStockModal';
- import { ProductDetailDrawer } from '@/components/inventory/ProductDetailDrawer';
+import { AddStockModal } from '@/components/modals/AddStockModal';
+import { AdjustStockModal } from '@/components/modals/AdjustStockModal';
+import { EditProductModal } from '@/components/modals/EditProductModal';
+import { ProductDetailDrawer } from '@/components/inventory/ProductDetailDrawer';
  import { useProducts } from '@/hooks/useProducts';
  import { Product, getStockStatus, formatETB, ProductCategory } from '@/types/inventory';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,7 +67,9 @@ import { cn } from '@/lib/utils';
    const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
    const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
  
    // Filter and sort products
    const filteredProducts = products
@@ -302,6 +306,12 @@ import { cn } from '@/lib/utils';
                              <Boxes className="h-4 w-4 mr-2" />
                              Add Inbound
                            </DropdownMenuItem>
+                           {isOwner && (
+                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setProductToEdit(product); setIsEditProductOpen(true); }}>
+                               <Pencil className="h-4 w-4 mr-2" />
+                               Edit Product
+                             </DropdownMenuItem>
+                           )}
                             {isOwner && (
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAdjustStock(product); }}>
                                 <ArrowUpDown className="h-4 w-4 mr-2" />
@@ -354,10 +364,15 @@ import { cn } from '@/lib/utils';
          selectedProduct={selectedProduct}
        />
        <ProductDetailDrawer
-         open={isDetailDrawerOpen}
-         onOpenChange={(open) => { setIsDetailDrawerOpen(open); if (!open) setSelectedProduct(null); }}
-         product={selectedProduct}
-       />
+          open={isDetailDrawerOpen}
+          onOpenChange={(open) => { setIsDetailDrawerOpen(open); if (!open) setSelectedProduct(null); }}
+          product={selectedProduct}
+        />
+        <EditProductModal
+          open={isEditProductOpen}
+          onOpenChange={(open) => { setIsEditProductOpen(open); if (!open) setProductToEdit(null); }}
+          product={productToEdit}
+        />
  
        {/* Delete Confirmation */}
        <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
