@@ -474,7 +474,7 @@ export default function History() {
 
       {/* Sale Detail Modal */}
       <Dialog open={!!selectedSale} onOpenChange={() => { setSelectedSale(null); setEditingNote(false); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
           </DialogHeader>
