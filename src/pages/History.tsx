@@ -8,10 +8,15 @@ import {
   ChevronUp,
   Loader2,
   ShoppingCart,
-  Boxes
+  Boxes,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -40,6 +45,7 @@ import {
 import { useProducts } from '@/hooks/useProducts';
 import { useSales, DateFilterType, getDateFilterLabel, Sale } from '@/hooks/useSales';
 import { formatETB } from '@/types/inventory';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InventoryHistoryTab } from '@/components/history/InventoryHistoryTab';
@@ -61,6 +67,7 @@ const dateFilterOptions: { value: HistoryDateFilterType; label: string }[] = [
 ];
 
 export default function History() {
+  const { isOwner } = useAuth();
   const [dateFilter, setDateFilter] = useState<HistoryDateFilterType>('7days');
   const { products, isLoading: productsLoading } = useProducts();
   
@@ -69,10 +76,29 @@ export default function History() {
     ? 'all' 
     : dateFilter as DateFilterType;
   
-  const { sales: allSales, isLoading: salesLoading } = useSales(queryFilter);
+  const { sales: allSales, isLoading: salesLoading, updateSaleNote } = useSales(queryFilter);
 
   // Selected sale for detail view
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [editingNote, setEditingNote] = useState(false);
+  const [editedNote, setEditedNote] = useState('');
+
+  const handleViewSale = (sale: Sale) => {
+    setSelectedSale(sale);
+    setEditedNote(sale.notes || '');
+    setEditingNote(false);
+  };
+
+  const handleSaveNote = () => {
+    if (selectedSale) {
+      updateSaleNote.mutate({ saleId: selectedSale.id, notes: editedNote }, {
+        onSuccess: () => {
+          setEditingNote(false);
+          setSelectedSale({ ...selectedSale, notes: editedNote });
+        },
+      });
+    }
+  };
 
   // Filter sales based on extended date range
   const sales = useMemo(() => {
@@ -407,7 +433,7 @@ export default function History() {
                       <tr 
                         key={sale.id}
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => setSelectedSale(sale)}
+                        onClick={() => handleViewSale(sale)}
                       >
                         <td className="font-medium max-w-[250px]">
                           <span className="truncate block">{getItemsSummary(sale)}</span>
@@ -447,7 +473,7 @@ export default function History() {
       </Tabs>
 
       {/* Sale Detail Modal */}
-      <Dialog open={!!selectedSale} onOpenChange={() => setSelectedSale(null)}>
+      <Dialog open={!!selectedSale} onOpenChange={() => { setSelectedSale(null); setEditingNote(false); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
@@ -488,12 +514,59 @@ export default function History() {
                 </div>
               </div>
 
-              {selectedSale.notes && (
-                <div className="p-3 bg-muted/50 rounded text-sm">
-                  <p className="text-muted-foreground">Notes:</p>
-                  <p>{selectedSale.notes}</p>
+              {/* Notes Section with Edit */}
+              <div className="p-3 bg-muted/50 rounded text-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-muted-foreground font-medium">Notes</p>
+                  {!editingNote ? (
+                    isOwner && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => setEditingNote(true)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
+                    )
+                  ) : (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-success"
+                        onClick={handleSaveNote}
+                        disabled={updateSaleNote.isPending}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => {
+                          setEditingNote(false);
+                          setEditedNote(selectedSale.notes || '');
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+                {editingNote ? (
+                  <Textarea
+                    value={editedNote}
+                    onChange={(e) => setEditedNote(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="text-sm"
+                  />
+                ) : (
+                  <p className="text-foreground">{selectedSale.notes || 'No notes'}</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
