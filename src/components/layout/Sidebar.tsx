@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, Menu, X, Sun, Moon, Wine, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Menu, X, Sun, Moon, Wine, History, LogOut, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +30,11 @@ const navItems = [
     path: '/history',
     label: 'History',
     icon: History
+  },
+  {
+    path: '/notes',
+    label: 'Notes',
+    icon: StickyNote
   }
 ];
 

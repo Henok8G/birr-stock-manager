@@ -120,17 +120,14 @@ export function useDashboard() {
         productSales[item.product_id] = (productSales[item.product_id] || 0) + item.quantity;
       });
 
-      const topSellers: TopSellerData[] = Object.entries(productSales)
-        .map(([product_id, units_sold]) => {
-          const product = products.find((p: any) => p.id === product_id);
-          return {
-            product_id,
-            product_name: product?.name || 'Unknown',
-            units_sold,
-          };
-        })
-        .sort((a, b) => b.units_sold - a.units_sold)
-        .slice(0, 5);
+      // Build sales data for ALL products
+      const topSellers: TopSellerData[] = products.map((product: any) => {
+        return {
+          product_id: product.id,
+          product_name: product.name,
+          units_sold: productSales[product.id] || 0,
+        };
+      }).sort((a, b) => b.units_sold - a.units_sold);
 
       // Get low stock products
       const lowStockProducts = productsWithStock.filter((p: any) => {

@@ -15,17 +15,16 @@ interface TopSellersChartProps {
 }
 
 export function TopSellersChart({ data }: TopSellersChartProps) {
-  // Truncate long product names
   const formatName = (name: string) => {
-    if (name.length > 15) {
-      return name.substring(0, 15) + '...';
+    if (name.length > 10) {
+      return name.substring(0, 10) + '..';
     }
     return name;
   };
 
   const colors = [
-    'hsl(var(--chart-2))', // Gold - top seller
-    'hsl(var(--chart-1))', // Primary green
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
     'hsl(var(--chart-3))',
     'hsl(var(--chart-4))',
     'hsl(var(--chart-5))',
@@ -33,25 +32,26 @@ export function TopSellersChart({ data }: TopSellersChartProps) {
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-      <h3 className="font-semibold text-lg text-foreground mb-4">Top 5 Sellers (Last 7 Days)</h3>
-      <div className="h-64">
+      <h3 className="font-semibold text-lg text-foreground mb-4">Product Sales (Last 7 Days)</h3>
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={data} 
-            layout="vertical" 
-            margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+          <BarChart
+            data={data}
+            margin={{ top: 5, right: 10, left: 10, bottom: 60 }}
           >
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={true} vertical={false} />
-            <XAxis type="number" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-            <YAxis 
-              type="category" 
-              dataKey="product_name" 
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+            <XAxis
+              dataKey="product_name"
               tickFormatter={formatName}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
               className="text-muted-foreground"
-              width={80}
+              angle={-45}
+              textAnchor="end"
+              interval={0}
+              height={60}
             />
-            <Tooltip 
+            <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
+            <Tooltip
               formatter={(value: number) => [`${value} units`, 'Units Sold']}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
@@ -60,7 +60,7 @@ export function TopSellersChart({ data }: TopSellersChartProps) {
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               }}
             />
-            <Bar dataKey="units_sold" radius={[0, 4, 4, 0]}>
+            <Bar dataKey="units_sold" radius={[4, 4, 0, 0]}>
               {data.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               ))}
