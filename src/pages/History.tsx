@@ -468,7 +468,24 @@ export default function History() {
         </TabsContent>
 
         <TabsContent value="inventory">
-          <InventoryHistoryTab dateFilter={dateFilter} />
+          <Tabs defaultValue="inbound" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="inbound" className="gap-2">
+                <Boxes className="h-4 w-4" />
+                Inbound
+              </TabsTrigger>
+              <TabsTrigger value="sold" className="gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                Sold
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="inbound">
+              <InventoryHistoryTab dateFilter={dateFilter} typeFilter="inbound" />
+            </TabsContent>
+            <TabsContent value="sold">
+              <InventoryHistoryTab dateFilter={dateFilter} typeFilter="sale" />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
