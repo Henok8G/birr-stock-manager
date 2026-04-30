@@ -46,9 +46,10 @@ export function InventoryHistoryTab({ dateFilter, typeFilter = 'all' }: Inventor
         cutoff = null;
     }
 
-    if (!cutoff) return allEntries;
-    return allEntries.filter(e => new Date(e.created_at) >= cutoff!);
-  }, [allEntries, dateFilter]);
+    const filtered = !cutoff ? allEntries : allEntries.filter(e => new Date(e.created_at) >= cutoff!);
+    if (typeFilter === 'all') return filtered;
+    return filtered.filter(e => e.type === typeFilter);
+  }, [allEntries, dateFilter, typeFilter]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
