@@ -7,9 +7,10 @@ import { format, parseISO, startOfDay, subDays, startOfWeek, subWeeks, startOfMo
 
 interface InventoryHistoryTabProps {
   dateFilter: string;
+  typeFilter?: 'all' | 'inbound' | 'sale';
 }
 
-export function InventoryHistoryTab({ dateFilter }: InventoryHistoryTabProps) {
+export function InventoryHistoryTab({ dateFilter, typeFilter = 'all' }: InventoryHistoryTabProps) {
   const { data: allEntries = [], isLoading } = useInventoryHistory();
 
   const entries = useMemo(() => {
