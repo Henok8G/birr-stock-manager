@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 export function MainLayout() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  useRealtimeNotifications();
 
   useEffect(() => {
     // Check for saved preference or system preference
