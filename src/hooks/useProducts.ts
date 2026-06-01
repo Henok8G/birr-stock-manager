@@ -10,7 +10,6 @@ export function useProducts() {
   const query = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      // Fetch products
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -18,42 +17,31 @@ export function useProducts() {
 
       if (productsError) throw productsError;
 
-      // Fetch stock entries grouped by product
-      const { data: stockEntries, error: stockError } = await supabase
-        .from('stock_entries')
-        .select('product_id, quantity, type');
+      // Pre-aggregated stock levels via server-side view to avoid the
+      // PostgREST 1000-row limit on stock_entries / sale_items.
+      const { data: levels, error: levelsError } = await supabase
+        .from('product_stock_levels' as any)
+        .select('product_id, received, adjustments, sold');
 
-      if (stockError) throw stockError;
+      if (levelsError) throw levelsError;
 
-      // Fetch sale items grouped by product
-      const { data: saleItems, error: saleError } = await supabase
-        .from('sale_items')
-        .select('product_id, quantity');
+      const levelMap = new Map<string, { received: number; adjustments: number; sold: number }>();
+      (levels || []).forEach((l: any) => {
+        levelMap.set(l.product_id, {
+          received: Number(l.received) || 0,
+          adjustments: Number(l.adjustments) || 0,
+          sold: Number(l.sold) || 0,
+        });
+      });
 
-      if (saleError) throw saleError;
-
-      // Calculate stock for each product
       return products.map((product: any) => {
-        const productStockEntries = stockEntries?.filter((e: any) => e.product_id === product.id) || [];
-        const productSaleItems = saleItems?.filter((s: any) => s.product_id === product.id) || [];
-
-        const received = productStockEntries
-          .filter((e: any) => e.type === 'inbound')
-          .reduce((sum: number, e: any) => sum + e.quantity, 0);
-
-        const adjustments = productStockEntries
-          .filter((e: any) => e.type === 'adjustment')
-          .reduce((sum: number, e: any) => sum + e.quantity, 0);
-
-        const sold = productSaleItems.reduce((sum: number, s: any) => sum + s.quantity, 0);
-
-        const current_stock = product.opening_stock + received - sold + adjustments;
-
+        const lv = levelMap.get(product.id) || { received: 0, adjustments: 0, sold: 0 };
+        const current_stock = product.opening_stock + lv.received - lv.sold + lv.adjustments;
         return {
           ...product,
-          received,
-          sold,
-          adjustments,
+          received: lv.received,
+          sold: lv.sold,
+          adjustments: lv.adjustments,
           current_stock,
         } as Product;
       });

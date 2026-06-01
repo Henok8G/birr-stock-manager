@@ -164,6 +164,13 @@ export type Database = {
             foreignKeyName: "sale_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_stock_levels"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -253,6 +260,13 @@ export type Database = {
             foreignKeyName: "stock_entries_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_stock_levels"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -281,7 +295,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_stock_levels: {
+        Row: {
+          adjustments: number | null
+          product_id: string | null
+          received: number | null
+          sold: number | null
+        }
+        Insert: {
+          adjustments?: never
+          product_id?: string | null
+          received?: never
+          sold?: never
+        }
+        Update: {
+          adjustments?: never
+          product_id?: string | null
+          received?: never
+          sold?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
