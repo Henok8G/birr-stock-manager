@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { isCountableSale } from '@/lib/sales';
 import { 
   Calendar,
   TrendingUp,
