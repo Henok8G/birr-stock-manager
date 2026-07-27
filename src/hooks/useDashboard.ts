@@ -58,18 +58,26 @@ export function useDashboard() {
       const weekAgo = weekAgoDate.toISOString();
       const todayStart = startOfDay(new Date()).toISOString();
 
+      // Exclude BOTH halves of a reversal pair: the flagged original
+      // (is_reversed = true) and the negative mirror row (reversed_sale_id set).
       const { data: recentSales, error: salesError } = await supabase
         .from('sales')
         .select('*')
         .eq('is_reversed', false)
+        .is('reversed_sale_id', null)
         .gte('created_at', weekAgo);
       if (salesError) throw salesError;
 
       const { data: recentSaleItems, error: saleItemsError } = await supabase
         .from('sale_items')
-        .select('product_id, quantity, selling_price, created_at')
+        .select('product_id, quantity, selling_price, created_at, sales(is_reversed, reversed_sale_id)')
         .gte('created_at', weekAgo);
       if (saleItemsError) throw saleItemsError;
+
+      // Same rule for line items, so reversed quantities don't skew top sellers.
+      const countableSaleItems = (recentSaleItems || []).filter((item: any) =>
+        isCountableSale(item.sales)
+      );
 
       const todaySales = (recentSales || []).filter((s: any) => s.created_at >= todayStart);
 
