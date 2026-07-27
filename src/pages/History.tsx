@@ -218,7 +218,7 @@ export default function History() {
 
   // Summary stats
   const summary = useMemo(() => {
-    const validSales = sales.filter(s => !s.is_reversed && s.total_units > 0);
+    const validSales = sales.filter(isCountableSale);
     return {
       totalUnits: validSales.reduce((sum, s) => sum + s.total_units, 0),
       totalValue: validSales.reduce((sum, s) => sum + s.total_value, 0),
