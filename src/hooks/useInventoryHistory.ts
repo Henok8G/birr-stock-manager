@@ -53,9 +53,10 @@ export function useInventoryHistory() {
         });
       });
 
-      // Map sale items (exclude reversed sales)
+      // Map sale items (exclude both halves of a reversal pair: the reversed
+      // original and its negative mirror row)
       saleItems?.forEach((item: any) => {
-        if (item.sales?.is_reversed) return;
+        if (!isCountableSale(item.sales)) return;
         entries.push({
           id: item.id,
           type: 'sale',
