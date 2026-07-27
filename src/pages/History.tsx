@@ -161,7 +161,7 @@ export default function History() {
     const salesByDay = new Map<string, { units: number; value: number }>();
     
     sales.forEach(sale => {
-      if (sale.is_reversed || sale.total_units < 0) return; // Skip reversals
+      if (!isCountableSale(sale)) return; // Skip both halves of a reversal pair
       
       const dateKey = format(parseISO(sale.created_at), 'yyyy-MM-dd');
       const existing = salesByDay.get(dateKey) || { units: 0, value: 0 };
