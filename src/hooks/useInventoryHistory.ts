@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isCountableSale } from '@/lib/sales';
 
 export interface InventoryHistoryEntry {
   id: string;
