@@ -189,7 +189,7 @@ export default function History() {
     const productSales = new Map<string, { units: number; value: number }>();
     
     sales.forEach(sale => {
-      if (sale.is_reversed || sale.total_units < 0) return;
+      if (!isCountableSale(sale)) return;
       
       sale.items?.forEach(item => {
         const existing = productSales.get(item.product_id) || { units: 0, value: 0 };
