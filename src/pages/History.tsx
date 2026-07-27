@@ -457,7 +457,7 @@ export default function History() {
                 </table>
               )}
 
-              {!isLoading && sales.filter(s => !s.is_reversed && s.total_units > 0).length === 0 && (
+              {!isLoading && sales.filter(isCountableSale).length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg">No transactions found</p>
