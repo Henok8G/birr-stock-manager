@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isCountableSale } from '@/lib/sales';
 
 export interface InventoryHistoryEntry {
   id: string;
@@ -29,7 +30,7 @@ export function useInventoryHistory() {
       // Fetch sale items with product names and sale info
       const { data: saleItems, error: saleError } = await supabase
         .from('sale_items')
-        .select('id, product_id, quantity, selling_price, created_at, sales(id, created_at, is_reversed), products(name)')
+        .select('id, product_id, quantity, selling_price, created_at, sales(id, created_at, is_reversed, reversed_sale_id), products(name)')
         .order('created_at', { ascending: false });
 
       if (saleError) throw saleError;
@@ -52,9 +53,10 @@ export function useInventoryHistory() {
         });
       });
 
-      // Map sale items (exclude reversed sales)
+      // Map sale items (exclude both halves of a reversal pair: the reversed
+      // original and its negative mirror row)
       saleItems?.forEach((item: any) => {
-        if (item.sales?.is_reversed) return;
+        if (!isCountableSale(item.sales)) return;
         entries.push({
           id: item.id,
           type: 'sale',

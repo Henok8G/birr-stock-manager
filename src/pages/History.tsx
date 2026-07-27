@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { isCountableSale } from '@/lib/sales';
 import { 
   Calendar,
   TrendingUp,
@@ -161,7 +162,7 @@ export default function History() {
     const salesByDay = new Map<string, { units: number; value: number }>();
     
     sales.forEach(sale => {
-      if (sale.is_reversed || sale.total_units < 0) return; // Skip reversals
+      if (!isCountableSale(sale)) return; // Skip both halves of a reversal pair
       
       const dateKey = format(parseISO(sale.created_at), 'yyyy-MM-dd');
       const existing = salesByDay.get(dateKey) || { units: 0, value: 0 };
@@ -188,7 +189,7 @@ export default function History() {
     const productSales = new Map<string, { units: number; value: number }>();
     
     sales.forEach(sale => {
-      if (sale.is_reversed || sale.total_units < 0) return;
+      if (!isCountableSale(sale)) return;
       
       sale.items?.forEach(item => {
         const existing = productSales.get(item.product_id) || { units: 0, value: 0 };
@@ -217,7 +218,7 @@ export default function History() {
 
   // Summary stats
   const summary = useMemo(() => {
-    const validSales = sales.filter(s => !s.is_reversed && s.total_units > 0);
+    const validSales = sales.filter(isCountableSale);
     return {
       totalUnits: validSales.reduce((sum, s) => sum + s.total_units, 0),
       totalValue: validSales.reduce((sum, s) => sum + s.total_value, 0),
@@ -429,7 +430,7 @@ export default function History() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sales.filter(s => !s.is_reversed && s.total_units > 0).map((sale) => (
+                    {sales.filter(isCountableSale).map((sale) => (
                       <tr 
                         key={sale.id}
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -456,7 +457,7 @@ export default function History() {
                 </table>
               )}
 
-              {!isLoading && sales.filter(s => !s.is_reversed && s.total_units > 0).length === 0 && (
+              {!isLoading && sales.filter(isCountableSale).length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg">No transactions found</p>
