@@ -113,7 +113,7 @@ export function useDashboard() {
 
       // Top sellers (last 7 days)
       const productSales: Record<string, number> = {};
-      (recentSaleItems || []).forEach((item: any) => {
+      countableSaleItems.forEach((item: any) => {
         productSales[item.product_id] = (productSales[item.product_id] || 0) + item.quantity;
       });
 
