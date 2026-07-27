@@ -1,72 +1,52 @@
-# Fix: Stock doesn't update after recording sales
+## What I verified in your data
 
-## Root cause
+Your three most recent sales rows:
 
-The `sale_items` table now has **1015 rows** (and growing). Supabase's PostgREST API returns a maximum of **1000 rows per query by default**. 
-
-In `src/hooks/useProducts.ts` we do:
-```ts
-supabase.from('sale_items').select('product_id, quantity')
+```text
+19,570   normal sale     (today 17:13)
+-15,985  reversal row    (today 17:08)   reversed_sale_id -> original
+ 15,985  original sale   (today 08:28)   is_reversed = true
 ```
-This silently returns only the first 1000 rows (oldest ones). Newly inserted sale_items for your latest sales are missing from the result, so when the hook computes `sold = sum(sale_items.quantity)` per product, the new sale is not counted and `current_stock` looks unchanged.
 
-The same bug exists in `src/hooks/useDashboard.ts` (which also fetches `sale_items` and `stock_entries` client-side). It will get worse as data grows — eventually inventory totals and dashboard KPIs will all drift.
+I also checked the underlying line items. The reversal mirrors the original **exactly**, item for item (Bedele 6/-6 and 5/-5, BEER 39/-39, DRAFT 123/-123, Soda 18/-18, Water 2/-2, 12/-12, 13/-13, CLASSIC 1/-1). I checked every reversed sale in the whole database — all three pairs cancel to zero units.
+
+**So your stock numbers are already mathematically correct.** Nothing was lost from inventory; the reversal properly gave the units back. The "gap" you're seeing is a **display/reporting bug**, not corrupted data.
+
+### The actual bug
+
+The Dashboard filters sales with `is_reversed = false`. That removes the original (+15,985) but **keeps** the reversal row (−15,985), because the reversal row itself has `is_reversed = false` — the flag only ever gets set on the original. The pair no longer cancels, leaving a lone −15,985. That's exactly why today shows 3,585 instead of 19,570.
+
+The History page filters both sides correctly, which is why the two pages disagree.
 
 ## The fix
 
-Move the aggregation to the database so we don't pull thousands of rows to the client.
+Treat a sale as excluded when it is **either half** of a reversal pair: `is_reversed = true` OR `reversed_sale_id IS NOT NULL`. Read-side only — no data migration, no schema change, and past reversals correct themselves the moment the page reloads.
 
-### 1. Database: add a stock-levels view
+### Changes
 
-Create a SQL view `product_stock_levels` that returns one row per product with pre-aggregated totals:
+1. **`src/hooks/useDashboard.ts`**
+   - Sales query: add `.is('reversed_sale_id', null)` alongside the existing `is_reversed = false` filter, so both halves drop out of today's units, today's value, and the 7-day chart.
+   - Top sellers: the `sale_items` fetch currently pulls raw line items with no reversal awareness, so the negative reversal quantities skew the ranking. Join the parent sale and skip items belonging to a reversed sale or a reversal sale.
 
-```sql
-CREATE OR REPLACE VIEW public.product_stock_levels
-WITH (security_invoker = on) AS
-SELECT
-  p.id AS product_id,
-  COALESCE(SUM(CASE WHEN se.type = 'inbound'    THEN se.quantity END), 0) AS received,
-  COALESCE(SUM(CASE WHEN se.type = 'adjustment' THEN se.quantity END), 0) AS adjustments,
-  COALESCE((SELECT SUM(si.quantity) FROM public.sale_items si WHERE si.product_id = p.id), 0) AS sold
-FROM public.products p
-LEFT JOIN public.stock_entries se ON se.product_id = p.id
-GROUP BY p.id;
+2. **`src/hooks/useInventoryHistory.ts`**
+   - Line 57 skips items whose sale `is_reversed`, but keeps the reversal sale's negative-quantity items — that's the phantom negative row you see under "Sold". Select `reversed_sale_id` on the joined sale and skip those items too, so a reversed sale disappears cleanly from history rather than leaving a −219 ghost.
 
-GRANT SELECT ON public.product_stock_levels TO authenticated;
-```
+3. **`src/pages/History.tsx`** — already filters correctly (`!is_reversed && total_units > 0`). I'll switch it to the same explicit `reversed_sale_id` check so all three pages use one consistent rule instead of relying on the sign of the total.
 
-`security_invoker = on` means RLS on the base tables still applies.
+4. **Stock levels view / `useProducts.ts`** — **leave unchanged.** They sum all `sale_items`, so original and reversal net to zero and current stock stays right. This is the behaviour that's already correct and I don't want to break it.
 
-### 2. Rewrite `useProducts.ts`
+### Nothing gets deleted
 
-Replace the two big `stock_entries` / `sale_items` fetches with a single select on the view:
+Reversal rows stay in the database and stay visible in the Sales list, so you keep the full audit trail of what was recorded and what was cancelled. They just stop polluting the totals.
 
-```ts
-const { data: levels } = await supabase
-  .from('product_stock_levels')
-  .select('product_id, received, adjustments, sold');
-```
-Then merge `levels` into `products` by `product_id` and compute `current_stock = opening_stock + received - sold + adjustments`. No more 1000-row ceiling.
+### One thing I noticed and left alone
 
-### 3. Rewrite `useDashboard.ts`
+There's an old June chain where a reversal was itself reversed (a sale of 1 Ambo, cancelled, then re-instated). The math nets to +1 sold, which is correct. The filter above handles it correctly too.
 
-- Use the same `product_stock_levels` view for `productsWithStock`, `totalUnitsInStock`, `totalStockValue`, and low-stock list.
-- For today's sales KPIs (`todayUnitsSold`, `todaySalesValue`) and the 7-day chart, query `sales` with a `gte('created_at', startOfToday)` / 7-day filter — that returns far fewer rows.
-- For top sellers (last 7 days), query `sale_items` filtered by `created_at >= weekAgo` so we never load the full history.
+## Verification after the fix
 
-### 4. No changes to `useSales.createSale`
-
-The insert logic is correct; the bug is purely on the read side.
-
-## Files touched
-
-- `supabase/migrations/<new>.sql` — create the view + grant
-- `src/hooks/useProducts.ts` — use the view
-- `src/hooks/useDashboard.ts` — use the view + date-filtered queries
-
-## Verification
-
-After the fix:
-1. Record a sale on the Sales page.
-2. Inventory page should immediately show the reduced `current_stock` for that product.
-3. Dashboard KPIs and low-stock list should update too.
+- Dashboard "Today's Sales Value" → **19,570** (currently 3,585)
+- Dashboard "Today's Units Sold" → **265**
+- Inventory History → Sold contains no negative-quantity rows
+- Dashboard, History, and Inventory all report the same totals
+- Current stock per product is unchanged (it was already right)
