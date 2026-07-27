@@ -430,7 +430,7 @@ export default function History() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sales.filter(s => !s.is_reversed && s.total_units > 0).map((sale) => (
+                    {sales.filter(isCountableSale).map((sale) => (
                       <tr 
                         key={sale.id}
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
